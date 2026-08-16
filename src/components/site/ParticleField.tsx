@@ -1,0 +1,194 @@
+import { useEffect, useRef } from "react";
+
+interface Particle {
+  homeX: number;
+  homeY: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  driftSeed: number;
+  radius: number;
+}
+
+const MAX_PARTICLES = 70;
+const AREA_PER_PARTICLE = 16000; // px^2 per particle, keeps density sane on large screens
+const CURSOR_RADIUS = 140;
+const CURSOR_FORCE = 34;
+const RETURN_EASE = 0.045;
+const DRIFT_AMOUNT = 6;
+
+/**
+ * A sparse field of soft points behind the whole page. Drifts slowly on its
+ * own; on pointer-fine devices, points near the cursor ease away and settle
+ * back once it moves off. Fully skipped under prefers-reduced-motion and
+ * paused while the tab is hidden. Reads --violet/--blue off the document so
+ * it stays correct across the default/ocean theme toggle without any of its
+ * own color logic.
+ */
+export function ParticleField() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    const pointerFine = window.matchMedia("(pointer: fine)").matches;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+
+    let particles: Particle[] = [];
+    let width = 0;
+    let height = 0;
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let raf = 0;
+    let running = true;
+    let colorA = "132 121 255";
+    let colorB = "96 165 250";
+
+    function readColors() {
+      const style = getComputedStyle(document.documentElement);
+      colorA = toRgbTriplet(style.getPropertyValue("--violet")) ?? colorA;
+      colorB = toRgbTriplet(style.getPropertyValue("--blue")) ?? colorB;
+    }
+
+    // oklch() can't be fed straight into canvas fillStyle reliably across
+    // browsers, so borrow the browser's own color parser via a throwaway
+    // element instead of hand-rolling oklch math.
+    function toRgbTriplet(oklch: string): string | null {
+      const probe = document.createElement("span");
+      probe.style.color = oklch.trim();
+      document.body.appendChild(probe);
+      const rgb = getComputedStyle(probe).color;
+      document.body.removeChild(probe);
+      const match = rgb.match(/\d+/g);
+      return match ? `${match[0]} ${match[1]} ${match[2]}` : null;
+    }
+
+    function seed() {
+      const count = Math.min(MAX_PARTICLES, Math.round((width * height) / AREA_PER_PARTICLE));
+      particles = Array.from({ length: count }, () => {
+        const homeX = Math.random() * width;
+        const homeY = Math.random() * height;
+        return {
+          homeX,
+          homeY,
+          x: homeX,
+          y: homeY,
+          vx: 0,
+          vy: 0,
+          driftSeed: Math.random() * Math.PI * 2,
+          radius: Math.random() * 1.1 + 0.6,
+        };
+      });
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas!.width = width * dpr;
+      canvas!.height = height * dpr;
+      canvas!.style.width = `${width}px`;
+      canvas!.style.height = `${height}px`;
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      seed();
+    }
+
+    function onPointerMove(e: PointerEvent) {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    }
+
+    function onPointerLeave() {
+      mouseX = -9999;
+      mouseY = -9999;
+    }
+
+    let resizeTimer = 0;
+    function onResize() {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(resize, 150);
+    }
+
+    function onVisibility() {
+      running = document.visibilityState === "visible";
+      if (running) tick();
+    }
+
+    function tick() {
+      if (!running) return;
+      const t = performance.now() / 1000;
+      ctx!.clearRect(0, 0, width, height);
+
+      for (const p of particles) {
+        const driftX = Math.sin(t * 0.25 + p.driftSeed) * DRIFT_AMOUNT;
+        const driftY = Math.cos(t * 0.2 + p.driftSeed) * DRIFT_AMOUNT;
+        const targetX = p.homeX + driftX;
+        const targetY = p.homeY + driftY;
+
+        if (pointerFine) {
+          const dx = p.x - mouseX;
+          const dy = p.y - mouseY;
+          const dist = Math.hypot(dx, dy);
+          if (dist < CURSOR_RADIUS) {
+            const push = (1 - dist / CURSOR_RADIUS) * CURSOR_FORCE;
+            const angle = Math.atan2(dy, dx);
+            p.vx += Math.cos(angle) * push * 0.02;
+            p.vy += Math.sin(angle) * push * 0.02;
+          }
+        }
+
+        p.vx += (targetX - p.x) * RETURN_EASE;
+        p.vy += (targetY - p.y) * RETURN_EASE;
+        p.vx *= 0.82;
+        p.vy *= 0.82;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        const color = Math.random() < 0.5 ? colorA : colorB;
+        ctx!.beginPath();
+        ctx!.fillStyle = `rgb(${color} / 0.35)`;
+        ctx!.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx!.fill();
+      }
+
+      raf = requestAnimationFrame(tick);
+    }
+
+    readColors();
+    resize();
+    tick();
+
+    window.addEventListener("resize", onResize);
+    document.addEventListener("visibilitychange", onVisibility);
+    if (pointerFine) {
+      window.addEventListener("pointermove", onPointerMove, { passive: true });
+      window.addEventListener("pointerleave", onPointerLeave);
+    }
+
+    const themeObserver = new MutationObserver(readColors);
+    themeObserver.observe(document.documentElement, { attributeFilter: ["data-theme"] });
+
+    return () => {
+      running = false;
+      cancelAnimationFrame(raf);
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerleave", onPointerLeave);
+      themeObserver.disconnect();
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 opacity-60"
+    />
+  );
+}

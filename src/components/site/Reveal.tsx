@@ -6,6 +6,7 @@ const directionClass = {
   up: "reveal",
   left: "reveal-left",
   right: "reveal-right",
+  scale: "reveal-scale",
 } as const;
 
 export function Reveal({

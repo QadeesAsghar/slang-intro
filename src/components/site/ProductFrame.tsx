@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useTilt } from "@/hooks/use-tilt";
 
 export function ProductFrame({
   src,
@@ -10,6 +11,7 @@ export function ProductFrame({
   imageClassName,
   chrome = true,
   children,
+  interactive = false,
 }: {
   src?: string;
   alt?: string;
@@ -19,11 +21,16 @@ export function ProductFrame({
   imageClassName?: string;
   chrome?: boolean;
   children?: ReactNode;
+  /** Subtle cursor tilt + elevation, so the interface feels like a living object. */
+  interactive?: boolean;
 }) {
+  const tiltRef = useTilt<HTMLElement>(interactive);
   return (
     <figure
+      ref={interactive ? tiltRef : undefined}
       className={cn(
         "depth overflow-hidden rounded-xl border border-hairline bg-surface",
+        interactive && "will-change-transform",
         className,
       )}
     >

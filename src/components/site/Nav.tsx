@@ -5,12 +5,18 @@ import { cn } from "@/lib/utils";
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   return (
@@ -24,7 +30,16 @@ export function Nav() {
         aria-label="Primary"
         className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8"
       >
-        <a href="#top" className="flex items-center gap-2.5" aria-label="Slang home">
+        <a
+          href="#top"
+          className="flex items-center gap-2.5"
+          aria-label="Slang home"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "none" : "translateY(-6px)",
+            transition: "opacity .5s ease, transform .5s cubic-bezier(.16,1,.3,1)",
+          }}
+        >
           <img src="/favicon.png" alt="" className="size-8 rounded-lg object-cover" />
           <span className="font-display text-[15px] font-semibold tracking-tight">slang</span>
         </a>

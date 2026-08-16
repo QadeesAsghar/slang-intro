@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ThemeToggle } from "../components/site/ThemeToggle";
+import { ParticleField } from "../components/site/ParticleField";
 
 // Runs before first paint so a saved "ocean" theme choice doesn't flash the
 // default purple/blue theme first. Kept tiny and dependency-free since it's
@@ -117,6 +118,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <ParticleField />
         {children}
         <ThemeToggle />
         <Scripts />

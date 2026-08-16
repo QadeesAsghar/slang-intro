@@ -129,14 +129,11 @@ export function ProductTour() {
                 {body}
               </SectionHeading>
               <Reveal
-                direction={imageFirst ? "left" : "right"}
+                direction="scale"
                 delay={100}
                 className={imageFirst ? "lg:order-1" : ""}
               >
-                <ProductFrame
-                  label={label}
-                  className="transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5"
-                >
+                <ProductFrame label={label} interactive>
                   <Mock />
                 </ProductFrame>
               </Reveal>
@@ -186,7 +183,7 @@ export function ConnectSection() {
               <a
                 key={email}
                 href={`mailto:${email}`}
-                className="text-sm text-foreground underline decoration-hairline underline-offset-4 transition-colors hover:text-violet"
+                className="link-underline text-sm text-foreground transition-colors hover:text-violet"
               >
                 {email}
               </a>

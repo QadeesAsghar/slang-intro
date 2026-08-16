@@ -23,6 +23,11 @@ dist-ssr
 # Netlify
 .netlify/
 
+# Environment variables (real secrets live only in Vercel/Netlify env settings)
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

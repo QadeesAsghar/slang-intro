@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductFrame } from "./ProductFrame";
@@ -61,12 +62,11 @@ export function Hero() {
             style={{
               opacity: mounted ? 1 : 0,
               transform: mounted ? "none" : "translateY(18px)",
-              transition:
-                "opacity .8s ease .4s, transform .8s cubic-bezier(.16,1,.3,1) .4s",
+              transition: "opacity .8s ease .4s, transform .8s cubic-bezier(.16,1,.3,1) .4s",
             }}
           >
-            Slang is a customer communication platform. Live chat on your website, customer
-            context, team workflows and analytics, running as one system.
+            Slang is a customer communication platform. Live chat on your website, customer context,
+            team workflows and analytics, running as one system.
           </p>
           <div
             className="mt-9 flex flex-wrap items-center justify-center gap-3"
@@ -76,16 +76,10 @@ export function Hero() {
             }}
           >
             <Button size="lg" asChild>
-              <a
-                ref={ctaRef}
-                href="https://github.com/QadeesAsghar"
-                target="_blank"
-                rel="noreferrer"
-                className="group"
-              >
+              <Link ref={ctaRef} to="/waitlist" className="group">
                 Explore Slang
                 <ArrowRight className="transition-transform duration-300 group-hover:translate-x-0.5" />
-              </a>
+              </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="border-hairline bg-surface/60">
               <a href="#connect">Get connected</a>
@@ -101,12 +95,7 @@ export function Hero() {
             transition: "opacity 1.1s ease .7s",
           }}
         >
-          <ProductFrame
-            priority
-            interactive
-            label="app.slang.app"
-            className="mx-auto max-w-6xl"
-          >
+          <ProductFrame priority interactive label="app.slang.app" className="mx-auto max-w-6xl">
             <DashboardMock />
           </ProductFrame>
           <div

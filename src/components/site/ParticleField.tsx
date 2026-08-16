@@ -7,7 +7,9 @@ interface Particle {
   y: number;
   vx: number;
   vy: number;
-  driftSeed: number;
+  orbitPhase: number;
+  orbitSpeed: number;
+  orbitRadius: number;
   radius: number;
   colorIndex: 0 | 1;
 }
@@ -17,13 +19,14 @@ const AREA_PER_PARTICLE = 16000; // px^2 per particle, keeps density sane on lar
 const CURSOR_RADIUS = 140;
 const CURSOR_FORCE = 34;
 const RETURN_EASE = 0.045;
-const DRIFT_AMOUNT = 6;
 const GLOW_BLUR = 7;
 
 /**
- * A sparse field of soft points behind the whole page. Drifts slowly on its
- * own; on pointer-fine devices, points near the cursor ease away and settle
- * back once it moves off. Fully skipped under prefers-reduced-motion and
+ * A sparse field of soft points behind the whole page. Each point continuously
+ * orbits its own home position (never reverses direction, unlike a back-and-
+ * forth oscillation) so the field always reads as gently in motion. On
+ * pointer-fine devices, points near the cursor also ease away and rejoin
+ * their orbit once it moves off. Fully skipped under prefers-reduced-motion and
  * paused while the tab is hidden. Reads --violet/--blue/--particle-alpha off
  * the document so it stays correct across the default/light theme toggle
  * without any of its own color logic — visibility is controlled once, via
@@ -88,7 +91,9 @@ export function ParticleField() {
           y: homeY,
           vx: 0,
           vy: 0,
-          driftSeed: Math.random() * Math.PI * 2,
+          orbitPhase: Math.random() * Math.PI * 2,
+          orbitSpeed: (Math.random() * 0.16 + 0.08) * (Math.random() < 0.5 ? 1 : -1),
+          orbitRadius: Math.random() * 50 + 40,
           radius: Math.random() * 1.3 + 1.1,
           colorIndex: Math.random() < 0.5 ? 0 : 1,
         };
@@ -133,10 +138,12 @@ export function ParticleField() {
       ctx!.clearRect(0, 0, width, height);
 
       for (const p of particles) {
-        const driftX = Math.sin(t * 0.25 + p.driftSeed) * DRIFT_AMOUNT;
-        const driftY = Math.cos(t * 0.2 + p.driftSeed) * DRIFT_AMOUNT;
-        const targetX = p.homeX + driftX;
-        const targetY = p.homeY + driftY;
+        // Continuous, never-reversing circular drift around the particle's
+        // home point (angle is a pure function of elapsed time, so it always
+        // advances the same direction rather than oscillating back and forth).
+        const angle = t * p.orbitSpeed + p.orbitPhase;
+        const targetX = p.homeX + Math.cos(angle) * p.orbitRadius;
+        const targetY = p.homeY + Math.sin(angle) * p.orbitRadius;
 
         if (pointerFine) {
           const dx = p.x - mouseX;

@@ -24,8 +24,8 @@ export function DashboardMock() {
         <span className="text-[13px] font-semibold sm:text-sm">Command Center</span>
         <span className="flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-2.5 py-1 text-[11px] text-muted-foreground">
           <span className="relative flex size-1.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-blue opacity-75" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-blue" />
           </span>
           847 live visitors
         </span>
@@ -41,7 +41,7 @@ export function DashboardMock() {
                 className={
                   stat.trend.startsWith("-")
                     ? "text-[11px] text-blue"
-                    : "text-[11px] text-emerald-400"
+                    : "text-[11px] text-violet"
                 }
               >
                 {stat.trend}

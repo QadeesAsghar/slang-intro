@@ -107,7 +107,7 @@ export function CustomersMock() {
                 {c.company}
               </span>
               <span className="text-[11px] text-muted-foreground">{c.plan}</span>
-              <span className="text-[11.5px] font-medium text-emerald-400">{c.csat}</span>
+              <span className="text-[11.5px] font-medium text-blue">{c.csat}</span>
             </li>
           ))}
         </ul>
@@ -161,7 +161,7 @@ export function TeamMock() {
               <span
                 className={
                   "absolute -right-0.5 -bottom-0.5 size-2 rounded-full border-2 border-surface " +
-                  (m.online ? "bg-emerald-400" : "bg-foreground/20")
+                  (m.online ? "bg-blue" : "bg-foreground/20")
                 }
               />
             </span>

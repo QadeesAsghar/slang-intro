@@ -37,9 +37,9 @@ export function ProductFrame({
       {chrome ? (
         <div className="flex items-center gap-3 border-b border-hairline bg-surface-2/70 px-4 py-2.5">
           <span className="flex gap-1.5" aria-hidden="true">
-            <span className="size-2.5 rounded-full bg-white/15" />
-            <span className="size-2.5 rounded-full bg-white/15" />
-            <span className="size-2.5 rounded-full bg-white/15" />
+            <span className="size-2.5 rounded-full bg-foreground/15" />
+            <span className="size-2.5 rounded-full bg-foreground/15" />
+            <span className="size-2.5 rounded-full bg-foreground/15" />
           </span>
           <span className="mx-auto rounded-md bg-background/60 px-3 py-1 text-[11px] tracking-wide text-muted-foreground">
             {label}

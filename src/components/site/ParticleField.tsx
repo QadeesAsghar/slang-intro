@@ -9,6 +9,7 @@ interface Particle {
   vy: number;
   driftSeed: number;
   radius: number;
+  colorIndex: 0 | 1;
 }
 
 const MAX_PARTICLES = 70;
@@ -17,14 +18,16 @@ const CURSOR_RADIUS = 140;
 const CURSOR_FORCE = 34;
 const RETURN_EASE = 0.045;
 const DRIFT_AMOUNT = 6;
+const GLOW_BLUR = 7;
 
 /**
  * A sparse field of soft points behind the whole page. Drifts slowly on its
  * own; on pointer-fine devices, points near the cursor ease away and settle
  * back once it moves off. Fully skipped under prefers-reduced-motion and
- * paused while the tab is hidden. Reads --violet/--blue off the document so
- * it stays correct across the default/ocean theme toggle without any of its
- * own color logic.
+ * paused while the tab is hidden. Reads --violet/--blue/--particle-alpha off
+ * the document so it stays correct across the default/light theme toggle
+ * without any of its own color logic — visibility is controlled once, via
+ * the per-particle fill alpha, not compounded with a canvas-level opacity.
  */
 export function ParticleField() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -46,13 +49,18 @@ export function ParticleField() {
     let mouseY = -9999;
     let raf = 0;
     let running = true;
-    let colorA = "132 121 255";
-    let colorB = "96 165 250";
+    const fallbackColors: [string, string] = ["132 121 255", "96 165 250"];
+    let colors: [string, string] = fallbackColors;
+    let alpha = 0.55;
 
-    function readColors() {
+    function readTheme() {
       const style = getComputedStyle(document.documentElement);
-      colorA = toRgbTriplet(style.getPropertyValue("--violet")) ?? colorA;
-      colorB = toRgbTriplet(style.getPropertyValue("--blue")) ?? colorB;
+      colors = [
+        toRgbTriplet(style.getPropertyValue("--violet")) ?? fallbackColors[0],
+        toRgbTriplet(style.getPropertyValue("--blue")) ?? fallbackColors[1],
+      ];
+      const parsedAlpha = parseFloat(style.getPropertyValue("--particle-alpha"));
+      alpha = Number.isFinite(parsedAlpha) ? parsedAlpha : alpha;
     }
 
     // oklch() can't be fed straight into canvas fillStyle reliably across
@@ -81,7 +89,8 @@ export function ParticleField() {
           vx: 0,
           vy: 0,
           driftSeed: Math.random() * Math.PI * 2,
-          radius: Math.random() * 1.1 + 0.6,
+          radius: Math.random() * 1.3 + 1.1,
+          colorIndex: Math.random() < 0.5 ? 0 : 1,
         };
       });
     }
@@ -148,9 +157,11 @@ export function ParticleField() {
         p.x += p.vx;
         p.y += p.vy;
 
-        const color = Math.random() < 0.5 ? colorA : colorB;
+        const rgb = colors[p.colorIndex];
         ctx!.beginPath();
-        ctx!.fillStyle = `rgb(${color} / 0.35)`;
+        ctx!.fillStyle = `rgb(${rgb} / ${alpha})`;
+        ctx!.shadowBlur = GLOW_BLUR;
+        ctx!.shadowColor = `rgb(${rgb} / ${alpha})`;
         ctx!.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx!.fill();
       }
@@ -158,7 +169,7 @@ export function ParticleField() {
       raf = requestAnimationFrame(tick);
     }
 
-    readColors();
+    readTheme();
     resize();
     tick();
 
@@ -169,7 +180,7 @@ export function ParticleField() {
       window.addEventListener("pointerleave", onPointerLeave);
     }
 
-    const themeObserver = new MutationObserver(readColors);
+    const themeObserver = new MutationObserver(readTheme);
     themeObserver.observe(document.documentElement, { attributeFilter: ["data-theme"] });
 
     return () => {
@@ -184,11 +195,5 @@ export function ParticleField() {
     };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      className="pointer-events-none fixed inset-0 opacity-60"
-    />
-  );
+  return <canvas ref={canvasRef} aria-hidden="true" className="pointer-events-none fixed inset-0" />;
 }

@@ -57,7 +57,7 @@ export function DashboardMock() {
                     background:
                       i === stat.bars.length - 1
                         ? "color-mix(in oklab, var(--violet) 80%, transparent)"
-                        : "oklch(1 0 0 / 8%)",
+                        : "var(--hairline)",
                   }}
                 />
               ))}

@@ -161,7 +161,7 @@ export function TeamMock() {
               <span
                 className={
                   "absolute -right-0.5 -bottom-0.5 size-2 rounded-full border-2 border-surface " +
-                  (m.online ? "bg-emerald-400" : "bg-white/20")
+                  (m.online ? "bg-emerald-400" : "bg-foreground/20")
                 }
               />
             </span>

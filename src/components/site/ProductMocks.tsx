@@ -58,10 +58,10 @@ export function InboxMock() {
       timeouts.current.push(setTimeout(() => setPhase(next), delay));
     };
     setPhase(1);
-    schedule(550, 2);
-    schedule(1300, 3);
-    schedule(1850, 4);
-    schedule(2350, 5);
+    schedule(700, 2);
+    schedule(1600, 3);
+    schedule(2300, 4);
+    schedule(2900, 5);
 
     return () => {
       timeouts.current.forEach(clearTimeout);

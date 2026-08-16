@@ -1,6 +1,11 @@
-import { Fragment, type ElementType } from "react";
+import { Fragment } from "react";
 import { useReveal } from "@/hooks/use-reveal";
 import { cn } from "@/lib/utils";
+
+// See the matching comment in Reveal.tsx: kept narrow rather than
+// React.ElementType because @react-three/fiber's global JSX.IntrinsicElements
+// extension breaks polymorphic-tag JSX typing for the broad type.
+type PolymorphicTag = "div" | "h1" | "h2" | "p" | "span";
 
 /**
  * Word-by-word reveal, built on the same one-shot useReveal/IntersectionObserver
@@ -20,17 +25,18 @@ export function RevealText({
   stagger = 45,
 }: {
   text: string;
-  as?: ElementType;
+  as?: PolymorphicTag;
   className?: string;
   wordClassName?: string;
   delay?: number;
   stagger?: number;
 }) {
-  const { ref, shown } = useReveal<HTMLDivElement>();
+  const { ref, shown } = useReveal<HTMLElement>();
   const words = text.split(" ");
 
   return (
-    <Tag ref={ref} className={className}>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <Tag ref={ref as any} className={className}>
       {words.map((word, i) => (
         <Fragment key={i}>
           <span className="word-mask">

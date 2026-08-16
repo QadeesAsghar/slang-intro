@@ -1,206 +1,272 @@
-import { useEffect, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
 
-interface Particle {
-  homeX: number;
-  homeY: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  orbitPhase: number;
-  orbitSpeed: number;
-  orbitRadius: number;
-  radius: number;
-  colorIndex: 0 | 1;
+interface ParticleData {
+  t: number;
+  speed: number;
+  mx: number;
+  my: number;
+  mz: number;
+  cx: number;
+  cy: number;
+  cz: number;
+  randomRadiusOffset: number;
+  idlePhase: number;
 }
 
-const MAX_PARTICLES = 70;
-const AREA_PER_PARTICLE = 16000; // px^2 per particle, keeps density sane on large screens
-const CURSOR_RADIUS = 140;
-const CURSOR_FORCE = 34;
-const RETURN_EASE = 0.045;
-const GLOW_BLUR = 7;
+interface AntigravityLayerProps {
+  count: number;
+  color: string;
+  opacity?: number;
+  magnetRadius?: number;
+  ringRadius?: number;
+  waveSpeed?: number;
+  waveAmplitude?: number;
+  particleSize?: number;
+  lerpSpeed?: number;
+  particleVariance?: number;
+  rotationSpeed?: number;
+  depthFactor?: number;
+  pulseSpeed?: number;
+  fieldStrength?: number;
+  idleRadius?: number;
+  idleSpeed?: number;
+  autoWanderPhase?: number;
+}
 
 /**
- * A sparse field of soft points behind the whole page. Each point continuously
- * orbits its own home position (never reverses direction, unlike a back-and-
- * forth oscillation) so the field always reads as gently in motion. On
- * pointer-fine devices, points near the cursor also ease away and rejoin
- * their orbit once it moves off. Fully skipped under prefers-reduced-motion and
- * paused while the tab is hidden. Reads --violet/--blue/--particle-alpha off
- * the document so it stays correct across the default/light theme toggle
- * without any of its own color logic — visibility is controlled once, via
- * the per-particle fill alpha, not compounded with a canvas-level opacity.
+ * One instanced layer of small capsule particles. Every particle idles in a
+ * slow orbit around its own scattered home position (so the whole field is
+ * always visibly moving, not just the area near the cursor), and particles
+ * that come within `magnetRadius` of the cursor (or, after 2s of no mouse
+ * movement, of a slow auto-wandering point — the fallback used on touch
+ * devices and whenever the mouse is idle) gather into a small rotating ring
+ * instead. Adapted from a user-supplied React Three Fiber component: kept
+ * the magnet/ring mechanic and per-particle wave/pulse math as given, added
+ * the idle-orbit fallback so particles outside the magnet radius don't sit
+ * fully still.
  */
-export function ParticleField() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+function AntigravityLayer({
+  count,
+  color,
+  opacity = 0.6,
+  magnetRadius = 7,
+  ringRadius = 4.5,
+  waveSpeed = 0.4,
+  waveAmplitude = 0.8,
+  particleSize = 1,
+  lerpSpeed = 0.08,
+  particleVariance = 1,
+  rotationSpeed = 0.06,
+  depthFactor = 1,
+  pulseSpeed = 2.2,
+  fieldStrength = 10,
+  idleRadius = 1.4,
+  idleSpeed = 0.12,
+  autoWanderPhase = 0,
+}: AntigravityLayerProps) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const { viewport } = useThree();
+  const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const lastMousePos = useRef({ x: 0, y: 0 });
+  const lastMouseMoveTime = useRef(0);
+  const virtualMouse = useRef({ x: 0, y: 0 });
 
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
+  const particles = useMemo<ParticleData[]>(() => {
+    const width = viewport.width || 100;
+    const height = viewport.height || 100;
+    return Array.from({ length: count }, () => {
+      const x = (Math.random() - 0.5) * width;
+      const y = (Math.random() - 0.5) * height;
+      const z = (Math.random() - 0.5) * 20;
+      return {
+        t: Math.random() * 100,
+        speed: 0.01 + Math.random() / 200,
+        mx: x,
+        my: y,
+        mz: z,
+        cx: x,
+        cy: y,
+        cz: z,
+        randomRadiusOffset: (Math.random() - 0.5) * 2,
+        idlePhase: Math.random() * Math.PI * 2,
+      };
+    });
+  }, [count, viewport.width, viewport.height]);
 
-    const pointerFine = window.matchMedia("(pointer: fine)").matches;
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  useFrame((state) => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
 
-    let particles: Particle[] = [];
-    let width = 0;
-    let height = 0;
-    let mouseX = -9999;
-    let mouseY = -9999;
-    let raf = 0;
-    let running = true;
-    const fallbackColors: [string, string] = ["132 121 255", "96 165 250"];
-    let colors: [string, string] = fallbackColors;
-    let alpha = 0.55;
+    const { viewport: v, pointer: m } = state;
+    const elapsed = state.clock.getElapsedTime();
 
-    function readTheme() {
-      const style = getComputedStyle(document.documentElement);
-      colors = [
-        toRgbTriplet(style.getPropertyValue("--violet")) ?? fallbackColors[0],
-        toRgbTriplet(style.getPropertyValue("--blue")) ?? fallbackColors[1],
-      ];
-      const parsedAlpha = parseFloat(style.getPropertyValue("--particle-alpha"));
-      alpha = Number.isFinite(parsedAlpha) ? parsedAlpha : alpha;
+    const mouseDist = Math.hypot(m.x - lastMousePos.current.x, m.y - lastMousePos.current.y);
+    if (mouseDist > 0.001) {
+      lastMouseMoveTime.current = Date.now();
+      lastMousePos.current = { x: m.x, y: m.y };
     }
 
-    // oklch() can't be fed straight into canvas fillStyle reliably across
-    // browsers, so borrow the browser's own color parser via a throwaway
-    // element instead of hand-rolling oklch math.
-    function toRgbTriplet(oklch: string): string | null {
-      const probe = document.createElement("span");
-      probe.style.color = oklch.trim();
-      document.body.appendChild(probe);
-      const rgb = getComputedStyle(probe).color;
-      document.body.removeChild(probe);
-      const match = rgb.match(/\d+/g);
-      return match ? `${match[0]} ${match[1]} ${match[2]}` : null;
+    let destX = (m.x * v.width) / 2;
+    let destY = (m.y * v.height) / 2;
+
+    if (Date.now() - lastMouseMoveTime.current > 2000) {
+      const time = elapsed + autoWanderPhase;
+      destX = Math.sin(time * 0.5) * (v.width / 4);
+      destY = Math.cos(time * 0.5 * 2) * (v.height / 4);
     }
 
-    function seed() {
-      const count = Math.min(MAX_PARTICLES, Math.round((width * height) / AREA_PER_PARTICLE));
-      particles = Array.from({ length: count }, () => {
-        const homeX = Math.random() * width;
-        const homeY = Math.random() * height;
-        return {
-          homeX,
-          homeY,
-          x: homeX,
-          y: homeY,
-          vx: 0,
-          vy: 0,
-          orbitPhase: Math.random() * Math.PI * 2,
-          orbitSpeed: (Math.random() * 0.16 + 0.08) * (Math.random() < 0.5 ? 1 : -1),
-          orbitRadius: Math.random() * 50 + 40,
-          radius: Math.random() * 1.3 + 1.1,
-          colorIndex: Math.random() < 0.5 ? 0 : 1,
-        };
-      });
-    }
+    virtualMouse.current.x += (destX - virtualMouse.current.x) * 0.05;
+    virtualMouse.current.y += (destY - virtualMouse.current.y) * 0.05;
 
-    function resize() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas!.width = width * dpr;
-      canvas!.height = height * dpr;
-      canvas!.style.width = `${width}px`;
-      canvas!.style.height = `${height}px`;
-      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
-      seed();
-    }
+    const targetX = virtualMouse.current.x;
+    const targetY = virtualMouse.current.y;
+    const globalRotation = elapsed * rotationSpeed;
 
-    function onPointerMove(e: PointerEvent) {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    }
+    particles.forEach((particle, i) => {
+      particle.t += particle.speed / 2;
+      const t = particle.t;
+      const { mx, my, mz, cz, randomRadiusOffset, idlePhase } = particle;
 
-    function onPointerLeave() {
-      mouseX = -9999;
-      mouseY = -9999;
-    }
+      const projectionFactor = 1 - cz / 50;
+      const projectedTargetX = targetX * projectionFactor;
+      const projectedTargetY = targetY * projectionFactor;
 
-    let resizeTimer = 0;
-    function onResize() {
-      window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(resize, 150);
-    }
+      const dx = mx - projectedTargetX;
+      const dy = my - projectedTargetY;
+      const dist = Math.hypot(dx, dy);
 
-    function onVisibility() {
-      running = document.visibilityState === "visible";
-      if (running) tick();
-    }
+      // Default (far from the cursor/wander point): a slow, never-reversing
+      // orbit around the particle's own scattered home position.
+      const idleAngle = elapsed * idleSpeed + idlePhase;
+      const targetPos = {
+        x: mx + Math.cos(idleAngle) * idleRadius,
+        y: my + Math.sin(idleAngle) * idleRadius,
+        z: mz * depthFactor,
+      };
 
-    function tick() {
-      if (!running) return;
-      const t = performance.now() / 1000;
-      ctx!.clearRect(0, 0, width, height);
-
-      for (const p of particles) {
-        // Continuous, never-reversing circular drift around the particle's
-        // home point (angle is a pure function of elapsed time, so it always
-        // advances the same direction rather than oscillating back and forth).
-        const angle = t * p.orbitSpeed + p.orbitPhase;
-        const targetX = p.homeX + Math.cos(angle) * p.orbitRadius;
-        const targetY = p.homeY + Math.sin(angle) * p.orbitRadius;
-
-        if (pointerFine) {
-          const dx = p.x - mouseX;
-          const dy = p.y - mouseY;
-          const dist = Math.hypot(dx, dy);
-          if (dist < CURSOR_RADIUS) {
-            const push = (1 - dist / CURSOR_RADIUS) * CURSOR_FORCE;
-            const angle = Math.atan2(dy, dx);
-            p.vx += Math.cos(angle) * push * 0.02;
-            p.vy += Math.sin(angle) * push * 0.02;
-          }
-        }
-
-        p.vx += (targetX - p.x) * RETURN_EASE;
-        p.vy += (targetY - p.y) * RETURN_EASE;
-        p.vx *= 0.82;
-        p.vy *= 0.82;
-        p.x += p.vx;
-        p.y += p.vy;
-
-        const rgb = colors[p.colorIndex];
-        ctx!.beginPath();
-        ctx!.fillStyle = `rgb(${rgb} / ${alpha})`;
-        ctx!.shadowBlur = GLOW_BLUR;
-        ctx!.shadowColor = `rgb(${rgb} / ${alpha})`;
-        ctx!.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx!.fill();
+      if (dist < magnetRadius) {
+        const angle = Math.atan2(dy, dx) + globalRotation;
+        const wave = Math.sin(t * waveSpeed + angle) * (0.5 * waveAmplitude);
+        const deviation = randomRadiusOffset * (5 / (fieldStrength + 0.1));
+        const currentRingRadius = ringRadius + wave + deviation;
+        targetPos.x = projectedTargetX + currentRingRadius * Math.cos(angle);
+        targetPos.y = projectedTargetY + currentRingRadius * Math.sin(angle);
+        targetPos.z = mz * depthFactor + Math.sin(t) * (1 * waveAmplitude * depthFactor);
       }
 
-      raf = requestAnimationFrame(tick);
+      particle.cx += (targetPos.x - particle.cx) * lerpSpeed;
+      particle.cy += (targetPos.y - particle.cy) * lerpSpeed;
+      particle.cz += (targetPos.z - particle.cz) * lerpSpeed;
+
+      dummy.position.set(particle.cx, particle.cy, particle.cz);
+      dummy.lookAt(projectedTargetX, projectedTargetY, particle.cz);
+      dummy.rotateX(Math.PI / 2);
+
+      const currentDistToMouse = Math.hypot(
+        particle.cx - projectedTargetX,
+        particle.cy - projectedTargetY,
+      );
+      const distFromRing = Math.abs(currentDistToMouse - ringRadius);
+      const scaleFactor = Math.max(0, Math.min(1, 1 - distFromRing / 10));
+
+      const finalScale =
+        Math.max(scaleFactor, 0.55) *
+        (0.8 + Math.sin(t * pulseSpeed) * 0.2 * particleVariance) *
+        particleSize;
+      dummy.scale.set(finalScale, finalScale, finalScale);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    });
+
+    mesh.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
+      <capsuleGeometry args={[0.09, 0.36, 4, 8]} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} />
+    </instancedMesh>
+  );
+}
+
+const FALLBACK_COLORS: [string, string] = ["rgb(132, 121, 255)", "rgb(96, 165, 250)"];
+
+// getComputedStyle(...).color isn't reliable here — depending on the browser
+// build, it can echo an oklch() input back verbatim instead of downgrading
+// it to rgb(), which THREE.Color can't parse. A 1x1 canvas always rasterizes
+// to concrete sRGB bytes regardless of the input color space, so read the
+// color back from actual pixel data instead of trusting the computed-style
+// string.
+let resolveCanvas: HTMLCanvasElement | null = null;
+function toRgbString(cssColor: string): string | null {
+  resolveCanvas ??= document.createElement("canvas");
+  resolveCanvas.width = 1;
+  resolveCanvas.height = 1;
+  const ctx = resolveCanvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.fillStyle = cssColor.trim();
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/**
+ * The intro's ambient particle environment — see AntigravityLayer above for
+ * the per-particle motion. Two layers (violet + blue, matching the site's
+ * own tokens, so it re-themes for free across default/light) share one
+ * scene. Skipped entirely under prefers-reduced-motion, and not mounted
+ * until after hydration (Canvas/WebGL is client-only).
+ */
+export function ParticleField() {
+  const [mounted, setMounted] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [colors, setColors] = useState<[string, string]>(FALLBACK_COLORS);
+
+  useEffect(() => {
+    setMounted(true);
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+    function readColors() {
+      const style = getComputedStyle(document.documentElement);
+      setColors([
+        toRgbString(style.getPropertyValue("--violet")) ?? FALLBACK_COLORS[0],
+        toRgbString(style.getPropertyValue("--blue")) ?? FALLBACK_COLORS[1],
+      ]);
     }
 
-    readTheme();
-    resize();
-    tick();
-
-    window.addEventListener("resize", onResize);
-    document.addEventListener("visibilitychange", onVisibility);
-    if (pointerFine) {
-      window.addEventListener("pointermove", onPointerMove, { passive: true });
-      window.addEventListener("pointerleave", onPointerLeave);
-    }
-
-    const themeObserver = new MutationObserver(readTheme);
-    themeObserver.observe(document.documentElement, { attributeFilter: ["data-theme"] });
-
-    return () => {
-      running = false;
-      cancelAnimationFrame(raf);
-      window.clearTimeout(resizeTimer);
-      window.removeEventListener("resize", onResize);
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerleave", onPointerLeave);
-      themeObserver.disconnect();
-    };
+    readColors();
+    const observer = new MutationObserver(readColors);
+    observer.observe(document.documentElement, { attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
   }, []);
 
-  return <canvas ref={canvasRef} aria-hidden="true" className="pointer-events-none fixed inset-0" />;
+  if (!mounted || reducedMotion) return null;
+
+  return (
+    <div className="fixed inset-0" aria-hidden="true">
+      <Canvas camera={{ position: [0, 0, 50], fov: 35 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
+        <AntigravityLayer
+          count={60}
+          color={colors[0]}
+          opacity={0.4}
+          particleSize={0.55}
+          magnetRadius={7}
+          ringRadius={4.5}
+        />
+        <AntigravityLayer
+          count={60}
+          color={colors[1]}
+          opacity={0.4}
+          particleSize={0.55}
+          magnetRadius={5.5}
+          ringRadius={3.2}
+          autoWanderPhase={Math.PI}
+          idleSpeed={0.16}
+        />
+      </Canvas>
+    </div>
+  );
 }

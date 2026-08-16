@@ -77,7 +77,7 @@ export const socialLinks = [
   },
 ];
 
-export const contactEmails = ["2025se139@student.uet.edu.pk", "2025se112@student.uet.edu.pk"];
+export const contactEmails = ["slang-org@outlook.com"];
 
 export { WhatsAppIcon };
 
@@ -90,8 +90,8 @@ export function WhatIsSlang() {
           title="One system for customer communication."
           align="center"
         >
-          A business connects Slang to its website. Conversations, customers, teams and
-          performance all live in the same workspace.
+          A business connects Slang to its website. Conversations, customers, teams and performance
+          all live in the same workspace.
         </SectionHeading>
 
         <ul className="mt-14 grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-3">
@@ -117,10 +117,7 @@ export function ProductTour() {
         {tourStops.map(({ eyebrow, title, body, label, Mock }, i) => {
           const imageFirst = i % 2 === 1;
           return (
-            <div
-              key={eyebrow}
-              className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16"
-            >
+            <div key={eyebrow} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
               <SectionHeading
                 eyebrow={eyebrow}
                 title={title}
@@ -128,11 +125,7 @@ export function ProductTour() {
               >
                 {body}
               </SectionHeading>
-              <Reveal
-                direction="scale"
-                delay={100}
-                className={imageFirst ? "lg:order-1" : ""}
-              >
+              <Reveal direction="scale" delay={100} className={imageFirst ? "lg:order-1" : ""}>
                 <ProductFrame label={label} interactive>
                   <Mock />
                 </ProductFrame>
@@ -150,8 +143,7 @@ export function ConnectSection() {
     <section id="connect" className="edge-light border-t border-hairline py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <SectionHeading eyebrow="Get connected" title="Follow along and reach out." align="center">
-          Slang is being built in the open. Join the channel, follow the org, or say hello
-          directly.
+          Slang is being built in the open. Join the channel, follow the org, or say hello directly.
         </SectionHeading>
 
         <ul className="mt-14 grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">

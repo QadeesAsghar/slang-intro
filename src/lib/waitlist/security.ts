@@ -49,7 +49,17 @@ export const CONFIG = {
   minDwellMs: num(process.env["MIN_DWELL_MS"], 1800),
   /** Tokens expire so a scraped one can't be stockpiled. */
   maxTokenAgeMs: num(process.env["MAX_TOKEN_AGE_MS"], 45 * 60 * 1000),
-  verifyMx: process.env["VERIFY_MX"] !== "false",
+  /**
+   * Off by default. The MX lookup this gates isn't a provider allowlist --
+   * any correctly-formatted address is always accepted regardless of
+   * domain -- but real submissions from smaller or academic mail domains
+   * (e.g. university subdomains) were getting rejected because their MX
+   * records didn't resolve reliably within the lookup's timeout, while
+   * large providers like Gmail always resolved instantly. That false-reject
+   * rate isn't worth what the check catches; set VERIFY_MX=true to
+   * re-enable it if spam becomes a real problem.
+   */
+  verifyMx: process.env["VERIFY_MX"] === "true",
 };
 
 /**

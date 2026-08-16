@@ -23,23 +23,27 @@ const messages = [
   { from: "customer", text: "It's iOS 18.1, started after your v3.2 update." },
 ];
 
-// The phase each message row starts entering at. The agent's row (index 1)
-// enters early, as the typing indicator, then swaps to its real text once
-// the phase advances further — see isTyping below.
-const ROW_REVEAL_PHASE = [1, 2, 4];
-const FINAL_PHASE = 5;
+// Every row enters as a typing indicator first and swaps to its real text
+// once the phase advances further, so there's never a blank/loading-looking
+// gap before a message shows up — the typing indicator itself is what's
+// visible while "waiting".
+const TYPING_PHASE = [1, 3, 5];
+const TEXT_PHASE = [2, 4, 6];
+const FINAL_PHASE = 7;
 
 const agentBubbleStyle = { background: "linear-gradient(135deg, var(--violet), var(--blue))" };
 
 /**
- * Plays the conversation once, staged, the first time it scrolls into view:
- * customer message, a brief typing indicator, the agent's reply, the
- * customer's follow-up, then a blinking caret in the reply box. Every row is
- * always mounted (just opacity/transform-hidden pre-reveal) so the container
- * height never shifts as the sequence advances. Skips straight to the final
- * state under prefers-reduced-motion instead of just letting the CSS
- * transition durations collapse to zero, since the setTimeout chain itself
- * would still take real time otherwise.
+ * Plays the conversation once, staged, the first time it scrolls into view.
+ * Each message enters as a typing indicator, then swaps to its real text —
+ * customer, agent, customer — ending with a blinking caret in the reply box.
+ * Every row is always mounted (just opacity/transform-hidden pre-reveal) so
+ * the container height never shifts as the sequence advances, and nothing
+ * ever sits there blank waiting to appear — the typing indicator is what's
+ * visible during that gap. Skips straight to the final state under
+ * prefers-reduced-motion instead of just letting the CSS transition
+ * durations collapse to zero, since the setTimeout chain itself would still
+ * take real time otherwise.
  */
 export function InboxMock() {
   const { ref, shown } = useReveal<HTMLDivElement>();
@@ -58,10 +62,12 @@ export function InboxMock() {
       timeouts.current.push(setTimeout(() => setPhase(next), delay));
     };
     setPhase(1);
-    schedule(700, 2);
-    schedule(1600, 3);
-    schedule(2300, 4);
-    schedule(2900, 5);
+    schedule(650, 2);
+    schedule(1450, 3);
+    schedule(2150, 4);
+    schedule(2950, 5);
+    schedule(3600, 6);
+    schedule(4200, 7);
 
     return () => {
       timeouts.current.forEach(clearTimeout);
@@ -87,28 +93,36 @@ export function InboxMock() {
       >
         {messages.map((m, i) => {
           const isAgent = m.from === "agent";
-          const rowVisible = phase >= (ROW_REVEAL_PHASE[i] ?? FINAL_PHASE);
-          const isTyping = i === 1 && phase === 2;
+          const typingAt = TYPING_PHASE[i] ?? FINAL_PHASE;
+          const textAt = TEXT_PHASE[i] ?? FINAL_PHASE;
+          const rowVisible = phase >= typingAt;
+          const isTyping = phase >= typingAt && phase < textAt;
           return (
             <div
               key={i}
               className={
-                "message-rise flex items-end gap-2" +
-                (rowVisible ? " message-rise-in" : "") +
+                "message-pop flex items-end gap-2" +
+                (rowVisible ? " message-pop-in" : "") +
                 (isAgent ? " flex-row-reverse" : "")
               }
             >
               <Avatar initials={isAgent ? "JD" : "SC"} size="size-6" />
               {isTyping ? (
                 <span
-                  className="flex items-center gap-1 rounded-lg px-3 py-2"
-                  style={agentBubbleStyle}
-                  aria-label="Agent is typing"
+                  className={
+                    "flex items-center gap-1 rounded-lg px-3 py-2" +
+                    (isAgent ? "" : " border border-hairline bg-surface-2")
+                  }
+                  style={isAgent ? agentBubbleStyle : undefined}
+                  aria-label={isAgent ? "Agent is typing" : "Sarah is typing"}
                 >
                   {[0, 1, 2].map((dot) => (
                     <span
                       key={dot}
-                      className="size-1.5 animate-bounce rounded-full bg-background/80"
+                      className={
+                        "size-1.5 animate-bounce rounded-full" +
+                        (isAgent ? " bg-background/80" : " bg-foreground/50")
+                      }
                       style={{ animationDelay: `${dot * 120}ms` }}
                     />
                   ))}

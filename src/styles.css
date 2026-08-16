@@ -225,9 +225,21 @@
   will-change: opacity, transform;
 }
 
-/* Message-bubble entrance (InboxMock's animated exchange): same easing
-   language as reveal/reveal-in above, tuned shorter/smaller for a chat
-   bubble rather than a full section. */
+/* InboxMock's animated exchange: a row pops in fast (message-pop) the
+   moment it's its turn to type, so the typing indicator itself never sits
+   there mid-fade looking like a loading state -- it's what immediately
+   replaces the "nothing happening yet" gap. The graceful slower rise
+   (message-rise) is reserved for the real text swapping in once typing
+   finishes, which is the moment that's supposed to feel like an arrival. */
+@utility message-pop {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+@utility message-pop-in {
+  opacity: 1;
+}
+
 @utility message-rise {
   opacity: 0;
   transform: translate3d(0, 14px, 0);

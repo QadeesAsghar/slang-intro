@@ -180,14 +180,21 @@ function WaitlistForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="w-full">
-      {/* Off-screen honeypots to catch spam bots without affecting humans */}
-      <div
-        aria-hidden="true"
-        style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, overflow: "hidden" }}
-      >
+      {/*
+        Honeypots to catch spam bots without affecting humans. display:none
+        (not just off-screen positioning) is deliberate: Chrome's own
+        autofill explicitly skips display:none fields but does still target
+        off-screen-positioned ones, and real users were getting silently
+        caught by their own browser autofilling these on real submissions.
+        The field names are likewise generic-but-obscure rather than
+        "company_website"/"fax" -- names common enough to be real business
+        form fields are exactly what both autofill heuristics and
+        honeypot-aware privacy extensions key off of.
+      */}
+      <div aria-hidden="true" style={{ display: "none" }}>
         <input
           type="text"
-          name="company_website"
+          name="hp_field_a"
           tabIndex={-1}
           autoComplete="off"
           value={companyWebsite}
@@ -195,7 +202,7 @@ function WaitlistForm() {
         />
         <input
           type="text"
-          name="fax"
+          name="hp_field_b"
           tabIndex={-1}
           autoComplete="off"
           value={fax}

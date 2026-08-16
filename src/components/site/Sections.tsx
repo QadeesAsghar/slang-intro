@@ -1,6 +1,32 @@
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
+import { ProductFrame } from "./ProductFrame";
+import { InboxMock, CustomersMock, TeamMock } from "./ProductMocks";
 import { Github, Linkedin, Instagram, Mail, MessageSquare, Users, Workflow } from "lucide-react";
+
+const tourStops = [
+  {
+    eyebrow: "Conversations",
+    title: "A message arrives. An agent answers.",
+    body: "The customer writes from your website. The conversation lands in the Slang inbox with its source, status and history already attached.",
+    label: "app.slang.app/inbox",
+    Mock: InboxMock,
+  },
+  {
+    eyebrow: "Customer context",
+    title: "Know who you are talking to.",
+    body: "Every conversation is connected to a customer record: company, plan and satisfaction. Nothing has to be asked twice.",
+    label: "app.slang.app/customers",
+    Mock: CustomersMock,
+  },
+  {
+    eyebrow: "Teams",
+    title: "Support that works as one team.",
+    body: "Roles, availability and active conversations are visible to everyone, so work goes to the right person, not just the nearest one.",
+    label: "app.slang.app/team",
+    Mock: TeamMock,
+  },
+];
 
 const capabilities = [
   {
@@ -79,6 +105,44 @@ export function WhatIsSlang() {
             </Reveal>
           ))}
         </ul>
+      </div>
+    </section>
+  );
+}
+
+export function ProductTour() {
+  return (
+    <section className="border-t border-hairline py-24 lg:py-32">
+      <div className="mx-auto flex max-w-7xl flex-col gap-24 px-5 lg:gap-32 lg:px-8">
+        {tourStops.map(({ eyebrow, title, body, label, Mock }, i) => {
+          const imageFirst = i % 2 === 1;
+          return (
+            <div
+              key={eyebrow}
+              className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16"
+            >
+              <SectionHeading
+                eyebrow={eyebrow}
+                title={title}
+                className={"max-w-none" + (imageFirst ? " lg:order-2" : "")}
+              >
+                {body}
+              </SectionHeading>
+              <Reveal
+                direction={imageFirst ? "left" : "right"}
+                delay={100}
+                className={imageFirst ? "lg:order-1" : ""}
+              >
+                <ProductFrame
+                  label={label}
+                  className="transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5"
+                >
+                  <Mock />
+                </ProductFrame>
+              </Reveal>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

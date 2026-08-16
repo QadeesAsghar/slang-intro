@@ -16,7 +16,7 @@ function Avatar({ initials, size = "size-7" }: { initials: string; size?: string
 
 const messages = [
   { from: "customer", text: "Hi, I'm having trouble with the chat widget on mobile Safari." },
-  { from: "agent", text: "Thanks for the report — can you confirm which iOS version?" },
+  { from: "agent", text: "Thanks for the report, can you confirm which iOS version?" },
   { from: "customer", text: "It's iOS 18.1, started after your v3.2 update." },
 ];
 

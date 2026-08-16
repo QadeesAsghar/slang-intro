@@ -4,7 +4,7 @@ import { Hero } from "@/components/site/Hero";
 import { Footer } from "@/components/site/Footer";
 import { WhatIsSlang, ProductTour, ConnectSection } from "@/components/site/Sections";
 
-const title = "Slang — Every customer conversation, in one place";
+const title = "Slang: Every customer conversation, in one place";
 const description =
   "Slang is a customer communication platform bringing website chat, customer context and team workflows into one workspace.";
 

@@ -1,21 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useReveal } from "@/hooks/use-reveal";
-
-const avatarGradient = {
-  background:
-    "linear-gradient(135deg, color-mix(in oklab, var(--violet) 55%, transparent), color-mix(in oklab, var(--blue) 45%, transparent))",
-};
-
-function Avatar({ initials, size = "size-7" }: { initials: string; size?: string }) {
-  return (
-    <span
-      className={`grid ${size} shrink-0 place-items-center rounded-full text-[10px] font-semibold`}
-      style={avatarGradient}
-    >
-      {initials}
-    </span>
-  );
-}
+import { UserAvatar } from "./UserAvatar";
 
 const messages = [
   { from: "customer", text: "Hi, I'm having trouble with the chat widget on mobile Safari." },
@@ -78,7 +63,8 @@ export function InboxMock() {
   return (
     <div className="bg-surface-2/40 p-5 sm:p-8">
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-[13px] font-semibold sm:text-sm">
+        <span className="flex items-center gap-2.5 text-[13px] font-semibold sm:text-sm">
+          <UserAvatar name="Sarah Chen" initials="SC" size="size-6" />
           Sarah Chen
           <span className="rounded border border-hairline px-1 py-px text-[9px] font-normal text-muted-foreground">
             VIP
@@ -106,7 +92,11 @@ export function InboxMock() {
                 (isAgent ? " flex-row-reverse" : "")
               }
             >
-              <Avatar initials={isAgent ? "JD" : "SC"} size="size-6" />
+              <UserAvatar
+                name={isAgent ? "John Doe" : "Sarah Chen"}
+                initials={isAgent ? "JD" : "SC"}
+                size="size-6"
+              />
               {isTyping ? (
                 <span
                   className={
@@ -191,7 +181,7 @@ export function CustomersMock() {
               }
             >
               <span className="flex min-w-0 items-center gap-2">
-                <Avatar initials={c.initials} size="size-6" />
+                <UserAvatar name={c.name} initials={c.initials} size="size-6" />
                 <span className="truncate text-[12px] font-medium">{c.name}</span>
               </span>
               <span className="hidden truncate text-[11.5px] text-muted-foreground sm:inline">
@@ -248,7 +238,7 @@ export function TeamMock() {
             }
           >
             <span className="relative">
-              <Avatar initials={m.initials} />
+              <UserAvatar name={m.name} initials={m.initials} size="size-7" />
               <span
                 className={
                   "absolute -right-0.5 -bottom-0.5 size-2 rounded-full border-2 border-surface " +

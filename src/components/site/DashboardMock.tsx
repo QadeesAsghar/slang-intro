@@ -1,3 +1,5 @@
+import { UserAvatar } from "./UserAvatar";
+
 const stats = [
   { label: "Open conversations", value: "142", trend: "+12%", bars: [30, 45, 35, 60, 50, 70, 90] },
   { label: "First response", value: "1m 48s", trend: "-22%", bars: [80, 65, 70, 55, 60, 45, 35] },
@@ -79,15 +81,7 @@ export function DashboardMock() {
                 (i < conversations.length - 1 ? " border-b border-hairline" : "")
               }
             >
-              <span
-                className="grid size-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold"
-                style={{
-                  background:
-                    "linear-gradient(135deg, color-mix(in oklab, var(--violet) 55%, transparent), color-mix(in oklab, var(--blue) 45%, transparent))",
-                }}
-              >
-                {c.initials}
-              </span>
+              <UserAvatar name={c.name} initials={c.initials} size="size-7" />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5 text-[12.5px] font-medium">
                   {c.name}

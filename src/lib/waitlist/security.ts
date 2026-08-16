@@ -1,5 +1,5 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { resolveMx } from "node:dns/promises";
+import { resolveMx, resolve4, resolve6 } from "node:dns/promises";
 
 /*
  * Ported from the standalone waitlist-page repo's server/lib/security.js,
@@ -50,16 +50,17 @@ export const CONFIG = {
   /** Tokens expire so a scraped one can't be stockpiled. */
   maxTokenAgeMs: num(process.env["MAX_TOKEN_AGE_MS"], 45 * 60 * 1000),
   /**
-   * Off by default. The MX lookup this gates isn't a provider allowlist --
-   * any correctly-formatted address is always accepted regardless of
-   * domain -- but real submissions from smaller or academic mail domains
-   * (e.g. university subdomains) were getting rejected because their MX
-   * records didn't resolve reliably within the lookup's timeout, while
-   * large providers like Gmail always resolved instantly. That false-reject
-   * rate isn't worth what the check catches; set VERIFY_MX=true to
-   * re-enable it if spam becomes a real problem.
+   * On by default. Not a provider allowlist -- any correctly-formatted
+   * address from any domain is accepted -- it just confirms the domain
+   * exists in DNS at all, which is what actually distinguishes a real
+   * address from typed-garbage like "anyone@anyui.com". Previously
+   * rejected some real academic/smaller domains that don't have their own
+   * MX record; domainAcceptsMail() now also tries A/AAAA (the RFC 5321
+   * fallback mail delivery already uses) before rejecting, so a domain
+   * only fails this if it doesn't resolve at all. Set VERIFY_MX=false to
+   * disable if it's ever too strict for a real domain in practice.
    */
-  verifyMx: process.env["VERIFY_MX"] === "true",
+  verifyMx: process.env["VERIFY_MX"] !== "false",
 };
 
 /**
@@ -354,10 +355,26 @@ interface MxResult {
 /** Cheap memo - a signup wave from one company shouldn't be one lookup each. */
 const mxCache = new Map<string, { result: MxResult; expires: number }>();
 
+const NOT_REJECTABLE: (string | undefined)[] = ["ENOTFOUND", "NXDOMAIN"];
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("dns_timeout")), ms)),
+  ]);
+}
+
 /**
- * Best-effort deliverability check. Fails open on transient DNS trouble: a
- * flaky resolver must never cost a real signup, so only a domain that
- * definitively does not exist is rejected.
+ * Best-effort deliverability check: does this domain exist and look able to
+ * receive mail at all. Two lookups, not one -- a domain with no MX record
+ * but a real A/AAAA record is still legitimate (SMTP falls back to the A
+ * record per RFC 5321 5.1, and this is common for smaller mail setups and
+ * university subdomains), so only rejecting on a missing MX record was
+ * false-rejecting real domains. A domain is rejected only when *neither*
+ * lookup finds anything -- i.e. the hostname doesn't exist in DNS at all,
+ * which is what actually distinguishes a real domain from typed-garbage
+ * like "anyui.com". Fails open on transient DNS trouble (timeouts, resolver
+ * hiccups): a flaky resolver must never cost a real signup.
  */
 export async function domainAcceptsMail(domain: string): Promise<MxResult> {
   if (!CONFIG.verifyMx) return { ok: true };
@@ -365,24 +382,43 @@ export async function domainAcceptsMail(domain: string): Promise<MxResult> {
   const cached = mxCache.get(domain);
   if (cached && cached.expires > Date.now()) return cached.result;
 
-  let result: MxResult;
-  try {
-    const records = await Promise.race([
-      resolveMx(domain),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("dns_timeout")), 3000)),
-    ]);
-    result = records?.length
-      ? { ok: true }
-      : { ok: false, error: "That domain can't receive email." };
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
-    const missing = code === "ENOTFOUND" || code === "NXDOMAIN";
-    result = missing ? { ok: false, error: "That domain can't receive email." } : { ok: true };
-  }
+  const result = await checkDomain(domain);
 
   if (mxCache.size > 2000) mxCache.clear();
   mxCache.set(domain, { result, expires: Date.now() + 60 * 60 * 1000 });
   return result;
+}
+
+async function checkDomain(domain: string): Promise<MxResult> {
+  const notFound = { ok: false, error: "That domain can't receive email." };
+
+  try {
+    const records = await withTimeout(resolveMx(domain), 5000);
+    if (records?.length) return { ok: true };
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (!NOT_REJECTABLE.includes(code)) return { ok: true }; // fail open, not a definitive miss
+  }
+
+  // No MX (or the domain doesn't resolve for MX at all) -- try the A/AAAA
+  // fallback before rejecting.
+  try {
+    const a = await withTimeout(resolve4(domain), 5000);
+    if (a?.length) return { ok: true };
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (!NOT_REJECTABLE.includes(code)) return { ok: true };
+  }
+
+  try {
+    const aaaa = await withTimeout(resolve6(domain), 5000);
+    if (aaaa?.length) return { ok: true };
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (!NOT_REJECTABLE.includes(code)) return { ok: true };
+  }
+
+  return notFound;
 }
 
 /** Clamp anything free-form before it reaches the database. */

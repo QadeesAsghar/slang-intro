@@ -231,6 +231,12 @@ function WaitlistForm() {
               setEmail(e.target.value);
               if (error) setError(null);
             }}
+            onBlur={(e) => {
+              const value = e.target.value.trim();
+              if (value && !EMAIL_RE.test(value)) {
+                setError("That doesn't look like a valid email address.");
+              }
+            }}
             placeholder="you@company.com"
             autoComplete="email"
             inputMode="email"

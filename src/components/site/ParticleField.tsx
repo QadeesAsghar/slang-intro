@@ -224,6 +224,7 @@ export function ParticleField() {
   const [mounted, setMounted] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [colors, setColors] = useState<[string, string]>(FALLBACK_COLORS);
+  const [isLight, setIsLight] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -235,6 +236,7 @@ export function ParticleField() {
         toRgbString(style.getPropertyValue("--violet")) ?? FALLBACK_COLORS[0],
         toRgbString(style.getPropertyValue("--blue")) ?? FALLBACK_COLORS[1],
       ]);
+      setIsLight(document.documentElement.dataset["theme"] === "light");
     }
 
     readColors();
@@ -245,21 +247,28 @@ export function ParticleField() {
 
   if (!mounted || reducedMotion) return null;
 
+  // The light theme's pale surface swallows the same particle opacity that
+  // reads fine against the dark theme's near-black background, and a sparser
+  // field is more noticeable as "empty" on a light ground. Boost both count
+  // and opacity in light mode rather than reusing dark-theme tuning.
+  const count = isLight ? 90 : 60;
+  const opacity = isLight ? 0.62 : 0.4;
+
   return (
     <div className="fixed inset-0" aria-hidden="true">
       <Canvas camera={{ position: [0, 0, 50], fov: 35 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
         <AntigravityLayer
-          count={60}
+          count={count}
           color={colors[0]}
-          opacity={0.4}
+          opacity={opacity}
           particleSize={0.55}
           magnetRadius={7}
           ringRadius={4.5}
         />
         <AntigravityLayer
-          count={60}
+          count={count}
           color={colors[1]}
-          opacity={0.4}
+          opacity={opacity}
           particleSize={0.55}
           magnetRadius={5.5}
           ringRadius={3.2}

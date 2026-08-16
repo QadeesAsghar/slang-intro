@@ -19,17 +19,15 @@ interface AntigravityLayerProps {
   count: number;
   color: string;
   opacity?: number;
-  magnetRadius?: number;
-  ringRadius?: number;
-  waveSpeed?: number;
-  waveAmplitude?: number;
+  repelRadius?: number;
+  repelStrength?: number;
+  connectionRadius?: number;
+  connectionOpacity?: number;
   particleSize?: number;
   lerpSpeed?: number;
   particleVariance?: number;
-  rotationSpeed?: number;
   depthFactor?: number;
   pulseSpeed?: number;
-  fieldStrength?: number;
   idleRadius?: number;
   idleSpeed?: number;
   autoWanderPhase?: number;
@@ -38,37 +36,38 @@ interface AntigravityLayerProps {
 /**
  * One instanced layer of small capsule particles. Every particle idles in a
  * slow orbit around its own scattered home position (so the whole field is
- * always visibly moving, not just the area near the cursor), and particles
- * that come within `magnetRadius` of the cursor (or, after 2s of no mouse
+ * always visibly moving, not just the area near the cursor). Particles that
+ * come within `repelRadius` of the cursor (or, after 2s of no mouse
  * movement, of a slow auto-wandering point — the fallback used on touch
- * devices and whenever the mouse is idle) gather into a small rotating ring
- * instead. Adapted from a user-supplied React Three Fiber component: kept
- * the magnet/ring mechanic and per-particle wave/pulse math as given, added
- * the idle-orbit fallback so particles outside the magnet radius don't sit
- * fully still.
+ * devices and whenever the mouse is idle) get gently pushed away from it,
+ * fading out toward the edge of the radius so it reads as an ambient
+ * awareness of the cursor rather than a physics toy. A thin, low-opacity
+ * line connects the cursor to whichever particles are within the smaller
+ * `connectionRadius`. Particles outside both radii are untouched by the
+ * cursor and keep their idle orbit.
  */
 function AntigravityLayer({
   count,
   color,
   opacity = 0.6,
-  magnetRadius = 7,
-  ringRadius = 4.5,
-  waveSpeed = 0.4,
-  waveAmplitude = 0.8,
+  repelRadius = 4.5,
+  repelStrength = 1.8,
+  connectionRadius = 3,
+  connectionOpacity = 0.18,
   particleSize = 1,
   lerpSpeed = 0.08,
   particleVariance = 1,
-  rotationSpeed = 0.06,
   depthFactor = 1,
   pulseSpeed = 2.2,
-  fieldStrength = 10,
   idleRadius = 1.4,
   idleSpeed = 0.12,
   autoWanderPhase = 0,
 }: AntigravityLayerProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
+  const linesRef = useRef<THREE.LineSegments>(null);
   const { viewport } = useThree();
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const linePositions = useMemo(() => new Float32Array(count * 2 * 3), [count]);
 
   const lastMousePos = useRef({ x: 0, y: 0 });
   const lastMouseMoveTime = useRef(0);
@@ -123,23 +122,25 @@ function AntigravityLayer({
 
     const targetX = virtualMouse.current.x;
     const targetY = virtualMouse.current.y;
-    const globalRotation = elapsed * rotationSpeed;
 
     particles.forEach((particle, i) => {
       particle.t += particle.speed / 2;
       const t = particle.t;
-      const { mx, my, mz, cz, randomRadiusOffset, idlePhase } = particle;
+      const { mx, my, mz, cz, idlePhase } = particle;
 
       const projectionFactor = 1 - cz / 50;
       const projectedTargetX = targetX * projectionFactor;
       const projectedTargetY = targetY * projectionFactor;
 
-      const dx = mx - projectedTargetX;
-      const dy = my - projectedTargetY;
+      // Distance from the particle's *current rendered position* (not its
+      // home point) to the cursor/wander point — repulsion has to react to
+      // where the dot actually is right now.
+      const dx = particle.cx - projectedTargetX;
+      const dy = particle.cy - projectedTargetY;
       const dist = Math.hypot(dx, dy);
 
-      // Default (far from the cursor/wander point): a slow, never-reversing
-      // orbit around the particle's own scattered home position.
+      // Default (outside both radii): a slow, never-reversing orbit around
+      // the particle's own scattered home position.
       const idleAngle = elapsed * idleSpeed + idlePhase;
       const targetPos = {
         x: mx + Math.cos(idleAngle) * idleRadius,
@@ -147,14 +148,16 @@ function AntigravityLayer({
         z: mz * depthFactor,
       };
 
-      if (dist < magnetRadius) {
-        const angle = Math.atan2(dy, dx) + globalRotation;
-        const wave = Math.sin(t * waveSpeed + angle) * (0.5 * waveAmplitude);
-        const deviation = randomRadiusOffset * (5 / (fieldStrength + 0.1));
-        const currentRingRadius = ringRadius + wave + deviation;
-        targetPos.x = projectedTargetX + currentRingRadius * Math.cos(angle);
-        targetPos.y = projectedTargetY + currentRingRadius * Math.sin(angle);
-        targetPos.z = mz * depthFactor + Math.sin(t) * (1 * waveAmplitude * depthFactor);
+      let repelAmount = 0;
+      if (dist < repelRadius) {
+        // Gentle push away from the cursor, fading to nothing at the edge
+        // of the radius — a nudge, not a shove. Added on top of (not
+        // replacing) the idle-orbit target, so the particle keeps drifting.
+        repelAmount = 1 - dist / repelRadius;
+        const nx = dist > 0.0001 ? dx / dist : 1;
+        const ny = dist > 0.0001 ? dy / dist : 0;
+        targetPos.x += nx * repelAmount * repelStrength;
+        targetPos.y += ny * repelAmount * repelStrength;
       }
 
       particle.cx += (targetPos.x - particle.cx) * lerpSpeed;
@@ -165,30 +168,53 @@ function AntigravityLayer({
       dummy.lookAt(projectedTargetX, projectedTargetY, particle.cz);
       dummy.rotateX(Math.PI / 2);
 
-      const currentDistToMouse = Math.hypot(
-        particle.cx - projectedTargetX,
-        particle.cy - projectedTargetY,
-      );
-      const distFromRing = Math.abs(currentDistToMouse - ringRadius);
-      const scaleFactor = Math.max(0, Math.min(1, 1 - distFromRing / 10));
-
       const finalScale =
-        Math.max(scaleFactor, 0.55) *
         (0.8 + Math.sin(t * pulseSpeed) * 0.2 * particleVariance) *
+        (1 + repelAmount * 0.2) *
         particleSize;
       dummy.scale.set(finalScale, finalScale, finalScale);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
+
+      // Connection line: only draw (non-degenerate segment) for particles
+      // within connectionRadius; otherwise collapse both endpoints to the
+      // same point so nothing renders, without touching the draw range.
+      const base = i * 6;
+      if (dist < connectionRadius) {
+        linePositions[base] = projectedTargetX;
+        linePositions[base + 1] = projectedTargetY;
+        linePositions[base + 2] = particle.cz;
+        linePositions[base + 3] = particle.cx;
+        linePositions[base + 4] = particle.cy;
+        linePositions[base + 5] = particle.cz;
+      } else {
+        linePositions[base] = particle.cx;
+        linePositions[base + 1] = particle.cy;
+        linePositions[base + 2] = particle.cz;
+        linePositions[base + 3] = particle.cx;
+        linePositions[base + 4] = particle.cy;
+        linePositions[base + 5] = particle.cz;
+      }
     });
 
     mesh.instanceMatrix.needsUpdate = true;
+    const lineAttr = linesRef.current?.geometry.attributes["position"];
+    if (lineAttr) lineAttr.needsUpdate = true;
   });
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
-      <capsuleGeometry args={[0.09, 0.36, 4, 8]} />
-      <meshBasicMaterial color={color} transparent opacity={opacity} />
-    </instancedMesh>
+    <group>
+      <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
+        <capsuleGeometry args={[0.09, 0.36, 4, 8]} />
+        <meshBasicMaterial color={color} transparent opacity={opacity} />
+      </instancedMesh>
+      <lineSegments ref={linesRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[linePositions, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial color={color} transparent opacity={connectionOpacity} depthWrite={false} />
+      </lineSegments>
+    </group>
   );
 }
 
@@ -262,16 +288,18 @@ export function ParticleField() {
           color={colors[0]}
           opacity={opacity}
           particleSize={0.55}
-          magnetRadius={7}
-          ringRadius={4.5}
+          repelRadius={4.5}
+          repelStrength={1.8}
+          connectionRadius={3}
         />
         <AntigravityLayer
           count={count}
           color={colors[1]}
           opacity={opacity}
           particleSize={0.55}
-          magnetRadius={5.5}
-          ringRadius={3.2}
+          repelRadius={3.6}
+          repelStrength={1.4}
+          connectionRadius={2.4}
           autoWanderPhase={Math.PI}
           idleSpeed={0.16}
         />

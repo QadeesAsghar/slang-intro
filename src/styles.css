@@ -225,6 +225,23 @@
   will-change: opacity, transform;
 }
 
+/* Message-bubble entrance (InboxMock's animated exchange): same easing
+   language as reveal/reveal-in above, tuned shorter/smaller for a chat
+   bubble rather than a full section. */
+@utility message-rise {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  transition:
+    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+@utility message-rise-in {
+  opacity: 1;
+  transform: none;
+}
+
 /* Word-by-word text reveal (RevealText): each word sits in a clipped mask
    so it rises into place rather than fading in place. Shares the reveal
    system's easing curve for one consistent motion language. */

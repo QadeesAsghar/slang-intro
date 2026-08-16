@@ -1,3 +1,6 @@
+import { useEffect, useRef, useState } from "react";
+import { useReveal } from "@/hooks/use-reveal";
+
 const avatarGradient = {
   background:
     "linear-gradient(135deg, color-mix(in oklab, var(--violet) 55%, transparent), color-mix(in oklab, var(--blue) 45%, transparent))",
@@ -20,7 +23,52 @@ const messages = [
   { from: "customer", text: "It's iOS 18.1, started after your v3.2 update." },
 ];
 
+// The phase each message row starts entering at. The agent's row (index 1)
+// enters early, as the typing indicator, then swaps to its real text once
+// the phase advances further — see isTyping below.
+const ROW_REVEAL_PHASE = [1, 2, 4];
+const FINAL_PHASE = 5;
+
+const agentBubbleStyle = { background: "linear-gradient(135deg, var(--violet), var(--blue))" };
+
+/**
+ * Plays the conversation once, staged, the first time it scrolls into view:
+ * customer message, a brief typing indicator, the agent's reply, the
+ * customer's follow-up, then a blinking caret in the reply box. Every row is
+ * always mounted (just opacity/transform-hidden pre-reveal) so the container
+ * height never shifts as the sequence advances. Skips straight to the final
+ * state under prefers-reduced-motion instead of just letting the CSS
+ * transition durations collapse to zero, since the setTimeout chain itself
+ * would still take real time otherwise.
+ */
 export function InboxMock() {
+  const { ref, shown } = useReveal<HTMLDivElement>();
+  const [phase, setPhase] = useState(0);
+  const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    if (!shown) return undefined;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPhase(FINAL_PHASE);
+      return undefined;
+    }
+
+    const schedule = (delay: number, next: number) => {
+      timeouts.current.push(setTimeout(() => setPhase(next), delay));
+    };
+    setPhase(1);
+    schedule(550, 2);
+    schedule(1300, 3);
+    schedule(1850, 4);
+    schedule(2350, 5);
+
+    return () => {
+      timeouts.current.forEach(clearTimeout);
+      timeouts.current = [];
+    };
+  }, [shown]);
+
   return (
     <div className="bg-surface-2/40 p-5 sm:p-8">
       <div className="flex items-center justify-between">
@@ -33,35 +81,64 @@ export function InboxMock() {
         <span className="text-[11px] text-muted-foreground">Linear · Pro Plan</span>
       </div>
 
-      <div className="mt-5 flex flex-col gap-2.5 overflow-hidden rounded-lg border border-hairline bg-surface p-4">
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={"flex items-end gap-2" + (m.from === "agent" ? " flex-row-reverse" : "")}
-          >
-            <Avatar initials={m.from === "agent" ? "JD" : "SC"} size="size-6" />
-            <span
+      <div
+        ref={ref}
+        className="mt-5 flex flex-col gap-2.5 overflow-hidden rounded-lg border border-hairline bg-surface p-4"
+      >
+        {messages.map((m, i) => {
+          const isAgent = m.from === "agent";
+          const rowVisible = phase >= (ROW_REVEAL_PHASE[i] ?? FINAL_PHASE);
+          const isTyping = i === 1 && phase === 2;
+          return (
+            <div
+              key={i}
               className={
-                "max-w-[80%] rounded-lg px-3 py-2 text-[12px] leading-snug" +
-                (m.from === "agent"
-                  ? " text-background"
-                  : " border border-hairline bg-surface-2 text-foreground")
-              }
-              style={
-                m.from === "agent"
-                  ? {
-                      background:
-                        "linear-gradient(135deg, var(--violet), var(--blue))",
-                    }
-                  : undefined
+                "message-rise flex items-end gap-2" +
+                (rowVisible ? " message-rise-in" : "") +
+                (isAgent ? " flex-row-reverse" : "")
               }
             >
-              {m.text}
-            </span>
-          </div>
-        ))}
-        <div className="mt-1.5 flex items-center gap-2 rounded-md border border-hairline bg-surface-2/60 px-3 py-2 text-[11px] text-muted-foreground">
+              <Avatar initials={isAgent ? "JD" : "SC"} size="size-6" />
+              {isTyping ? (
+                <span
+                  className="flex items-center gap-1 rounded-lg px-3 py-2"
+                  style={agentBubbleStyle}
+                  aria-label="Agent is typing"
+                >
+                  {[0, 1, 2].map((dot) => (
+                    <span
+                      key={dot}
+                      className="size-1.5 animate-bounce rounded-full bg-background/80"
+                      style={{ animationDelay: `${dot * 120}ms` }}
+                    />
+                  ))}
+                </span>
+              ) : (
+                <span
+                  className={
+                    "max-w-[80%] rounded-lg px-3 py-2 text-[12px] leading-snug" +
+                    (isAgent
+                      ? " text-background"
+                      : " border border-hairline bg-surface-2 text-foreground")
+                  }
+                  style={isAgent ? agentBubbleStyle : undefined}
+                >
+                  {m.text}
+                </span>
+              )}
+            </div>
+          );
+        })}
+        <div
+          className={
+            "message-rise mt-1.5 flex items-center gap-2 rounded-md border border-hairline bg-surface-2/60 px-3 py-2 text-[11px] text-muted-foreground" +
+            (phase >= FINAL_PHASE ? " message-rise-in" : "")
+          }
+        >
           Reply to Sarah…
+          {phase >= FINAL_PHASE && (
+            <span className="ml-0.5 h-3 w-px animate-pulse bg-foreground/50" aria-hidden="true" />
+          )}
         </div>
       </div>
     </div>

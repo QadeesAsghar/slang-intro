@@ -82,6 +82,20 @@
     0 60px 140px -60px oklch(0 0 0 / 80%);
 }
 
+/*
+ * Secondary theme: same near-black surfaces and type as the default theme,
+ * but every accent token that was purple (--primary/--ring/--violet, plus
+ * the faint purple tint on --accent) is replaced with a teal/cyan hue.
+ * Everything else (backgrounds, surfaces, --blue, status colors) is shared,
+ * since every component reaches accent color only through these variables.
+ */
+[data-theme="ocean"] {
+  --primary: oklch(0.68 0.14 195);
+  --ring: oklch(0.68 0.14 195);
+  --accent: oklch(0.26 0.02 200);
+  --violet: oklch(0.7 0.13 195);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

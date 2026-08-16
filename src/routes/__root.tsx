@@ -11,6 +11,12 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { ThemeToggle } from "../components/site/ThemeToggle";
+
+// Runs before first paint so a saved "ocean" theme choice doesn't flash the
+// default purple/blue theme first. Kept tiny and dependency-free since it's
+// inlined into <head> and must run synchronously, pre-hydration.
+const noFlashThemeScript = `(function(){try{var t=localStorage.getItem("slang-theme");if(t==="ocean")document.documentElement.dataset.theme="ocean"}catch(e){}})();`;
 
 function NotFoundComponent() {
   return (
@@ -105,12 +111,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: noFlashThemeScript }} />
         <HeadContent />
       </head>
       <body>
         {children}
+        <ThemeToggle />
         <Scripts />
       </body>
     </html>

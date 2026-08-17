@@ -1,5 +1,4 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { resolveMx } from "node:dns/promises";
 
 /*
  * Ported from the standalone waitlist-page repo's server/lib/security.js,
@@ -49,18 +48,6 @@ export const CONFIG = {
   minDwellMs: num(process.env["MIN_DWELL_MS"], 1800),
   /** Tokens expire so a scraped one can't be stockpiled. */
   maxTokenAgeMs: num(process.env["MAX_TOKEN_AGE_MS"], 45 * 60 * 1000),
-  /**
-   * On by default. Not a provider allowlist -- any correctly-formatted
-   * address from any domain is accepted -- it just confirms the domain
-   * exists in DNS at all, which is what actually distinguishes a real
-   * address from typed-garbage like "anyone@anyui.com". Previously
-   * rejected some real academic/smaller domains that don't have their own
-   * MX record; domainAcceptsMail() now also tries A/AAAA (the RFC 5321
-   * fallback mail delivery already uses) before rejecting, so a domain
-   * only fails this if it doesn't resolve at all. Set VERIFY_MX=false to
-   * disable if it's ever too strict for a real domain in practice.
-   */
-  verifyMx: process.env["VERIFY_MX"] !== "false",
 };
 
 /**
@@ -352,60 +339,24 @@ interface MxResult {
   error?: string;
 }
 
-/** Cheap memo - a signup wave from one company shouldn't be one lookup each. */
-const mxCache = new Map<string, { result: MxResult; expires: number }>();
-
 /**
- * Codes that mean DNS gave a definitive, confirmed answer of "nothing here"
- * -- domain doesn't exist (ENOTFOUND/NXDOMAIN) or exists but has zero
- * records of the queried type (ENODATA). Anything else (timeouts, resolver
- * errors, SERVFAIL) is transient and must not cost a real signup, so those
- * fail open.
+ * Every DNS-based deliverability check tried here (MX-only, then MX+A/AAAA)
+ * kept trading one failure mode for another -- rejecting real academic
+ * domains, or letting parked junk domains through -- and none of it was
+ * verifiable in this environment anyway (outbound DNS is blocked in the
+ * sandbox this was built in). Replaced with a plain allowlist: only Gmail
+ * and the university domain get through. No DNS lookup, no timeout, no
+ * fail-open ambiguity -- just a string comparison that's always correct
+ * for what it claims to do.
  */
-const DEFINITIVE_MISS: (string | undefined)[] = ["ENOTFOUND", "NXDOMAIN", "ENODATA"];
+const ALLOWED_DOMAINS = new Set(["gmail.com", "googlemail.com", "student.uet.edu.pk"]);
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("dns_timeout")), ms)),
-  ]);
-}
-
-/**
- * Best-effort deliverability check: does this domain actually have a mail
- * exchanger. MX-only, deliberately -- an earlier version of this also fell
- * back to checking bare A/AAAA records (the RFC 5321 5.1 fallback SMTP
- * itself uses), but that made the check nearly toothless: registered-but-
- * unused domains almost always still resolve to *something* (a registrar
- * parking page), so a typo/junk domain like "dasda.com" passed right
- * through. Real intent to receive mail shows up as an MX record; a bare A
- * record with no MX is a much stronger junk-domain signal in practice than
- * it is a legitimate small mail setup. Fails open only on transient DNS
- * trouble (timeouts, resolver hiccups) -- a flaky resolver must never cost
- * a real signup -- but "this domain has confirmed zero MX records" is
- * treated as a real answer, not a maybe.
- */
-export async function domainAcceptsMail(domain: string): Promise<MxResult> {
-  if (!CONFIG.verifyMx) return { ok: true };
-
-  const cached = mxCache.get(domain);
-  if (cached && cached.expires > Date.now()) return cached.result;
-
-  let result: MxResult;
-  try {
-    const records = await withTimeout(resolveMx(domain), 5000);
-    result = records?.length
-      ? { ok: true }
-      : { ok: false, error: "That domain can't receive email." };
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
-    const definitiveMiss = DEFINITIVE_MISS.includes(code);
-    result = definitiveMiss ? { ok: false, error: "That domain can't receive email." } : { ok: true };
-  }
-
-  if (mxCache.size > 2000) mxCache.clear();
-  mxCache.set(domain, { result, expires: Date.now() + 60 * 60 * 1000 });
-  return result;
+export function domainAcceptsMail(domain: string): MxResult {
+  if (ALLOWED_DOMAINS.has(domain)) return { ok: true };
+  return {
+    ok: false,
+    error: "Only Gmail and student.uet.edu.pk addresses can join the waitlist right now.",
+  };
 }
 
 /** Clamp anything free-form before it reaches the database. */

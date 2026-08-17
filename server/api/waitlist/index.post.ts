@@ -122,7 +122,7 @@ export default defineEventHandler(async (event) => {
     return { error: parsed.error };
   }
 
-  const deliverable = await domainAcceptsMail(parsed.domain);
+  const deliverable = domainAcceptsMail(parsed.domain);
   if (!deliverable.ok) {
     setResponseStatus(event, 400);
     return { error: deliverable.error };

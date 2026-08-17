@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MessageCircle } from "lucide-react";
 import { useReveal } from "@/hooks/use-reveal";
 import { UserAvatar } from "./UserAvatar";
 
@@ -253,6 +254,153 @@ export function TeamMock() {
             <span className="shrink-0 text-[10.5px] text-muted-foreground">
               {m.active ? `${m.active} active` : "Offline"}
             </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const websites = [
+  { domain: "app.nortia.io", meta: "1,204 conversations", active: true },
+  { domain: "docs.slang.io", meta: "388 conversations", active: true },
+  { domain: "staging.kite.finance", meta: "12 conversations", active: false },
+];
+
+export function WebsitesMock() {
+  return (
+    <div className="bg-surface-2/40 p-5 sm:p-8">
+      <div className="flex items-center justify-between">
+        <span className="text-[13px] font-semibold sm:text-sm">Websites</span>
+        <span className="text-[11px] text-muted-foreground">3 connected</span>
+      </div>
+
+      <ul className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface">
+        {websites.map((site, i) => (
+          <li
+            key={site.domain}
+            className={
+              "flex items-center gap-3 px-4 py-2.5" +
+              (i < websites.length - 1 ? " border-b border-hairline" : "")
+            }
+          >
+            <span className={"size-1.5 shrink-0 rounded-full " + (site.active ? "bg-blue" : "bg-foreground/20")} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[12.5px] font-medium">{site.domain}</span>
+              <span className="text-[11px] text-muted-foreground">{site.meta}</span>
+            </span>
+            <span
+              className={
+                "shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-medium tracking-wide" +
+                (site.active
+                  ? " border-blue/25 bg-blue/10 text-blue"
+                  : " border-hairline text-muted-foreground")
+              }
+            >
+              {site.active ? "Active" : "Inactive"}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const accentColors = ["var(--violet)", "var(--blue)", "oklch(0.7 0.16 70)", "oklch(0.62 0.22 25)"];
+
+export function WidgetSettingsMock() {
+  return (
+    <div className="bg-surface-2/40 p-5 sm:p-8">
+      <div className="flex items-center justify-between">
+        <span className="text-[13px] font-semibold sm:text-sm">Widget settings</span>
+        <span className="text-[11px] text-muted-foreground">Live preview</span>
+      </div>
+
+      <div className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface p-4">
+        <p className="text-[10px] tracking-wide text-muted-foreground uppercase">Accent color</p>
+        <div className="mt-2.5 flex gap-2">
+          {accentColors.map((color, i) => (
+            <span
+              key={color}
+              className={
+                "size-5 rounded-full" + (i === 0 ? " ring-2 ring-offset-2 ring-offset-surface ring-violet" : "")
+              }
+              style={{ background: color }}
+            />
+          ))}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <div className="w-[70%] overflow-hidden rounded-lg border border-hairline">
+            <div
+              className="flex items-center gap-2 px-3 py-2.5"
+              style={{ background: "linear-gradient(135deg, var(--violet), var(--blue))" }}
+            >
+              <span className="size-6 shrink-0 rounded-full bg-background/25" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[11.5px] font-semibold text-background">
+                  Slang support
+                </span>
+                <span className="text-[9.5px] text-background/75">Online · replies in seconds</span>
+              </span>
+            </div>
+            <div className="bg-surface-2/60 px-3 py-2.5">
+              <span className="inline-block rounded-md border border-hairline bg-surface px-2.5 py-1.5 text-[11px] text-foreground">
+                Hi there, how can we help?
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-end">
+        <span className="grid size-9 place-items-center rounded-full bg-blue text-background shadow-sm">
+          <MessageCircle className="size-4.5" aria-hidden="true" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const sessions = [
+  { device: "MacBook Pro (Safari 17)", meta: "Berlin, DE · Now", thisDevice: true },
+  { device: "iPhone 15 (Slang iOS)", meta: "Berlin, DE · 3h ago", thisDevice: false },
+  { device: "Windows 11 (Chrome 126)", meta: "Lagos, NG · 2d ago", thisDevice: false },
+];
+
+export function SecurityMock() {
+  return (
+    <div className="bg-surface-2/40 p-5 sm:p-8">
+      <div className="flex items-center justify-between">
+        <span className="text-[13px] font-semibold sm:text-sm">Security</span>
+        <span className="text-[11px] text-muted-foreground">3 sessions</span>
+      </div>
+
+      <ul className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface">
+        {sessions.map((session, i) => (
+          <li
+            key={session.device}
+            className={
+              "flex items-center gap-3 px-4 py-2.5" +
+              (i < sessions.length - 1 ? " border-b border-hairline" : "")
+            }
+          >
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5 truncate text-[12px] font-medium">
+                <span className="truncate">{session.device}</span>
+                {session.thisDevice ? (
+                  <span className="shrink-0 rounded border border-blue/25 bg-blue/10 px-1 py-px text-[9px] font-normal text-blue">
+                    This device
+                  </span>
+                ) : null}
+              </span>
+              <span className="text-[11px] text-muted-foreground">{session.meta}</span>
+            </span>
+            {!session.thisDevice ? (
+              <span className="shrink-0 rounded border border-hairline px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                Revoke
+              </span>
+            ) : null}
           </li>
         ))}
       </ul>

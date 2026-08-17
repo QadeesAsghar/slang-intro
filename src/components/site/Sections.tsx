@@ -1,7 +1,14 @@
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 import { ProductFrame } from "./ProductFrame";
-import { InboxMock, CustomersMock, TeamMock } from "./ProductMocks";
+import {
+  InboxMock,
+  CustomersMock,
+  TeamMock,
+  WebsitesMock,
+  WidgetSettingsMock,
+  SecurityMock,
+} from "./ProductMocks";
 import { Github, Linkedin, Instagram, Mail, MessageSquare, Users, Workflow } from "lucide-react";
 
 const tourStops = [
@@ -25,6 +32,27 @@ const tourStops = [
     body: "Roles, availability and active conversations are visible to everyone, so work goes to the right person, not just the nearest one.",
     label: "slang.app/team",
     Mock: TeamMock,
+  },
+  {
+    eyebrow: "Installed everywhere",
+    title: "One snippet, every property.",
+    body: "Add Slang to any site with a single script tag. Every property you connect shows its status and conversation volume at a glance.",
+    label: "slang.app/websites",
+    Mock: WebsitesMock,
+  },
+  {
+    eyebrow: "Make it yours",
+    title: "Brand the widget, not just the inbox.",
+    body: "Accent color, position and welcome message are yours to set, with a live preview so changes are never a guess.",
+    label: "slang.app/widget",
+    Mock: WidgetSettingsMock,
+  },
+  {
+    eyebrow: "Built for trust",
+    title: "Full visibility into access.",
+    body: "Active sessions, scoped API keys and an audit trail keep every login and change accounted for.",
+    label: "slang.app/security",
+    Mock: SecurityMock,
   },
 ];
 

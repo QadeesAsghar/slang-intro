@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Lottie } from "lottie-react";
 import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "./Reveal";
 import { RevealText } from "./RevealText";
 import { useMagnetic } from "@/hooks/use-magnetic";
 import { solveChallenge } from "@/lib/waitlist-pow";
+import emailSentAnimation from "@/assets/email-sent.json";
 
 /*
  * Ported from the standalone waitlist-page repo's WaitlistForm.tsx, adapted
@@ -46,10 +48,15 @@ function WaitlistForm() {
   );
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   const ticketRef = useRef<Ticket | null>(null);
   const powPromiseRef = useRef<Promise<string> | null>(null);
   const submitRef = useMagnetic<HTMLButtonElement>();
+
+  useEffect(() => {
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
 
   // Prefetch a token and start solving its proof-of-work challenge in the
   // background as soon as the form mounts, so submitting never has to wait
@@ -153,9 +160,20 @@ function WaitlistForm() {
         aria-live="polite"
         className="reveal reveal-in flex flex-col items-center rounded-3xl border border-hairline bg-surface/80 px-6 py-10 text-center backdrop-blur"
       >
-        <span className="mb-4 grid size-14 place-items-center rounded-full border border-blue/25 bg-blue/10">
-          <Check className="size-6 text-blue" />
-        </span>
+        {reducedMotion ? (
+          <span className="mb-4 grid size-14 place-items-center rounded-full border border-blue/25 bg-blue/10">
+            <Check className="size-6 text-blue" />
+          </span>
+        ) : (
+          <Lottie
+            src={emailSentAnimation}
+            loop={false}
+            autoplay
+            className="mb-2"
+            style={{ width: 128, height: 128 }}
+            aria-hidden="true"
+          />
+        )}
         <h3 className="text-lg font-semibold tracking-tight sm:text-xl">
           {submissionState === "already_joined"
             ? "You're already on the list"

@@ -51,6 +51,7 @@
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
+    "lottie-react": "^3.1.0",
     "lucide-react": "^0.575.0",
     "mongodb": "^7.5.0",
     "nodemailer": "^9.0.5",

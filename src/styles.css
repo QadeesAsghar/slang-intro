@@ -254,6 +254,24 @@
   transform: none;
 }
 
+/* The waitlist success card's checkmark, which appears once the email-sent
+   Lottie animation's own completion event fires (see WaitlistSection.tsx),
+   not on a guessed delay. A small confident pop-in, same easing curve as
+   the rest of the site's motion system. */
+@utility check-pop {
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+@utility check-pop-in {
+  opacity: 1;
+  transform: scale(1);
+}
+
 /* Word-by-word text reveal (RevealText): each word sits in a clipped mask
    so it rises into place rather than fading in place. Shares the reveal
    system's easing curve for one consistent motion language. */

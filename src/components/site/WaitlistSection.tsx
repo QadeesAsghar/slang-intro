@@ -49,6 +49,7 @@ function WaitlistForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [planeDone, setPlaneDone] = useState(false);
 
   const ticketRef = useRef<Ticket | null>(null);
   const powPromiseRef = useRef<Promise<string> | null>(null);
@@ -165,14 +166,28 @@ function WaitlistForm() {
             <Check className="size-6 text-blue" />
           </span>
         ) : (
-          <Lottie
-            src={emailSentAnimation}
-            loop={false}
-            autoplay
-            className="mb-2"
-            style={{ width: 128, height: 128 }}
-            aria-hidden="true"
-          />
+          <span className="relative mb-2 grid place-items-center" style={{ width: 128, height: 128 }}>
+            <Lottie
+              src={emailSentAnimation}
+              loop={false}
+              autoplay
+              subscriptions={{ complete: () => setPlaneDone(true) }}
+              style={{ width: 128, height: 128 }}
+              aria-hidden="true"
+            />
+            {/* Picks up right where the plane's flight ends, via the
+                animation's own completion event rather than a guessed
+                timeout, so this stays in sync even if playback speed or
+                the source animation ever changes. */}
+            <span
+              className={
+                "check-pop absolute grid size-14 place-items-center rounded-full border border-blue/25 bg-blue/10" +
+                (planeDone ? " check-pop-in" : "")
+              }
+            >
+              <Check className="size-6 text-blue" />
+            </span>
+          </span>
         )}
         <h3 className="text-lg font-semibold tracking-tight sm:text-xl">
           {submissionState === "already_joined"

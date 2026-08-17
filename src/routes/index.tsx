@@ -7,6 +7,7 @@ import { WhatIsSlang, ProductTour, ConnectSection } from "@/components/site/Sect
 const title = "Slang: Every customer conversation, in one place";
 const description =
   "Slang is a customer communication platform bringing website chat, customer context and team workflows into one workspace.";
+const url = "https://slang-intro.vercel.app/";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,8 +17,12 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: url },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
     ],
+    links: [{ rel: "canonical", href: url }],
   }),
   component: Index,
 });

@@ -14,6 +14,20 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ThemeToggle } from "../components/site/ThemeToggle";
 import { ParticleField } from "../components/site/ParticleField";
 
+const SITE_URL = "https://slang-intro.vercel.app";
+const SHARE_IMAGE = `${SITE_URL}/favicon.png`;
+
+// Same URLs as Sections.tsx's `socialLinks` (kept as plain strings here,
+// not imported from there, so the root route -- loaded on every page --
+// doesn't pull in Sections.tsx's whole component tree just for four URLs).
+// Keep in sync if those links ever change.
+const SAME_AS = [
+  "https://whatsapp.com/channel/0029VbDfaOvF6smtYgb6hn2f",
+  "https://github.com/QadeesAsghar",
+  "https://www.linkedin.com/company/slangofficial/",
+  "https://www.instagram.com/slang_chat?igsh=aG10Znpjc250M3c1",
+];
+
 // Runs before first paint so a saved "light" theme choice doesn't flash the
 // default dark theme first. Kept tiny and dependency-free since it's
 // inlined into <head> and must run synchronously, pre-hydration.
@@ -87,7 +101,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Slang" },
       { name: "description", content: "Customer communication platform." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Slang" },
+      { property: "og:image", content: SHARE_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: SHARE_IMAGE },
+      { name: "robots", content: "index, follow" },
+      { name: "theme-color", content: "#0d0c11" },
+      { name: "google-site-verification", content: "vYU5OpXKSt4kO05O83hxsuj-DvucUfeu16zeGNxuq6c" },
+      {
+        "script:ld+json": {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Slang",
+          url: SITE_URL,
+          logo: SHARE_IMAGE,
+          sameAs: SAME_AS,
+        },
+      },
     ],
     links: [
       {

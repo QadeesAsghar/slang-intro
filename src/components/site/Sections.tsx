@@ -77,7 +77,7 @@ export const socialLinks = [
   },
 ];
 
-export const contactEmails = ["slang-org@outlook.com"];
+export const contactEmails = ["slang-org@outlook.com", "slang.org@yahoo.com"];
 
 export { WhatsAppIcon };
 

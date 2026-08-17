@@ -77,7 +77,7 @@ export function Hero() {
           >
             <Button size="lg" asChild>
               <Link ref={ctaRef} to="/waitlist" className="group">
-                Explore Slang
+                Join Waitlist
                 <ArrowRight className="transition-transform duration-300 group-hover:translate-x-0.5" />
               </Link>
             </Button>

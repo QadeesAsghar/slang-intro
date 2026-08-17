@@ -41,6 +41,11 @@ interface SubmitBody {
 const globalLimit = createLimiter({ name: "global_submit", limit: 240, windowMs: 60 * 1000 });
 const perIpLimit = createLimiter({ name: "submit", limit: 5, windowMs: 10 * 60 * 1000 });
 
+// Real payloads (email, token, nonce, referrer capped at 512) stay well
+// under 1KB; this just stops an oversized body from being fully parsed
+// and trimmed before the field-level length checks get a chance to reject it.
+const MAX_BODY_BYTES = 8 * 1024;
+
 const ALLOWED_ORIGINS = (process.env["ALLOWED_ORIGINS"] || "")
   .split(",")
   .map((value) => value.trim())
@@ -57,10 +62,17 @@ function originAllowed(origin: string | undefined): boolean {
   return ALLOWED_ORIGINS.includes(origin);
 }
 
+/*
+ * A non-string value here (an object, an array) is never something a real
+ * browser form submits; readBody<SubmitBody>()'s type only asserts the
+ * shape, it doesn't enforce it, so treat anything that isn't a plain
+ * non-empty string as tripped too, same as a filled-in honeypot.
+ */
 function honeypotTripped(companyWebsite: unknown, fax: unknown): boolean {
-  return [companyWebsite, fax].some(
-    (value) => typeof value === "string" && value.trim().length > 0,
-  );
+  return [companyWebsite, fax].some((value) => {
+    if (typeof value !== "string") return value !== undefined;
+    return value.trim().length > 0;
+  });
 }
 
 export default defineEventHandler(async (event) => {
@@ -69,6 +81,12 @@ export default defineEventHandler(async (event) => {
   if (!originAllowed(getRequestHeader(event, "origin"))) {
     setResponseStatus(event, 403);
     return { error: "Request blocked." };
+  }
+
+  const contentLength = Number(getRequestHeader(event, "content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+    setResponseStatus(event, 413);
+    return { error: "Request too large." };
   }
 
   const body = (await readBody<SubmitBody>(event)) ?? {};

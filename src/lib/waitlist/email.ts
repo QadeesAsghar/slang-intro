@@ -47,7 +47,23 @@ async function getResendClient(): Promise<Resend | null> {
   return new Resend(apiKey);
 }
 
+/*
+ * normalizeEmail()'s regex already rejects anything that could break this
+ * template, so this is defense-in-depth, not a fix for a live gap: if that
+ * regex is ever loosened later, this stays the second line of defense
+ * against stored HTML/script injection in an outbound email.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function welcomeEmailHtml(toEmail: string): string {
+  const safeEmail = escapeHtml(toEmail);
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -89,7 +105,7 @@ function welcomeEmailHtml(toEmail: string): string {
             <td style="padding:0 36px 24px 36px;">
               <h1 style="margin:0 0 14px 0; font-size:24px; font-weight:700; color:#ffffff; letter-spacing:-0.03em; line-height:1.25;">You are on the list.</h1>
               <p style="margin:0 0 16px 0; font-size:15px; line-height:24px; color:#a1a1aa;">Your spot has been reserved. We are rolling out access in sequential batches to ensure high reliability and zero latency for every workspace.</p>
-              <p style="margin:0; font-size:15px; line-height:24px; color:#a1a1aa;">We will notify you at <strong style="color:#ffffff;">${toEmail}</strong> as soon as your instance is ready to deploy.</p>
+              <p style="margin:0; font-size:15px; line-height:24px; color:#a1a1aa;">We will notify you at <strong style="color:#ffffff;">${safeEmail}</strong> as soon as your instance is ready to deploy.</p>
             </td>
           </tr>
           <tr>

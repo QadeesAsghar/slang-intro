@@ -166,7 +166,7 @@ export function CustomersMock() {
       </div>
 
       <div className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface">
-        <div className="grid grid-cols-[1.6fr_1fr_0.7fr_0.6fr] gap-2 border-b border-hairline px-4 py-2 text-[10px] tracking-wide text-muted-foreground uppercase">
+        <div className="grid grid-cols-[1.6fr_0.7fr_0.6fr] gap-2 border-b border-hairline px-4 py-2 text-[10px] tracking-wide text-muted-foreground uppercase sm:grid-cols-[1.6fr_1fr_0.7fr_0.6fr]">
           <span>Customer</span>
           <span className="hidden sm:inline">Company</span>
           <span>Plan</span>
@@ -177,7 +177,7 @@ export function CustomersMock() {
             <li
               key={c.name}
               className={
-                "grid grid-cols-[1.6fr_1fr_0.7fr_0.6fr] items-center gap-2 px-4 py-2.5" +
+                "grid grid-cols-[1.6fr_0.7fr_0.6fr] items-center gap-2 px-4 py-2.5 sm:grid-cols-[1.6fr_1fr_0.7fr_0.6fr]" +
                 (i < customers.length - 1 ? " border-b border-hairline" : "")
               }
             >

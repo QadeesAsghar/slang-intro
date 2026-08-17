@@ -9,7 +9,7 @@ type PolymorphicTag = "div" | "h1" | "h2" | "p" | "span";
 
 /**
  * Word-by-word reveal, built on the same one-shot useReveal/IntersectionObserver
- * the rest of the site's scroll reveals use — one observer per block, words
+ * the rest of the site's scroll reveals use: one observer per block, words
  * staggered purely via CSS transition-delay (same technique Reveal/SectionHeading
  * already use for staggered children). Each word sits in its own clipped
  * "mask" so it rises into place instead of just fading; the space between

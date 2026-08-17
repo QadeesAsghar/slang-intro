@@ -18,8 +18,8 @@ const SITE_URL = "https://slang-intro.vercel.app";
 const SHARE_IMAGE = `${SITE_URL}/favicon.png`;
 
 // Same URLs as Sections.tsx's `socialLinks` (kept as plain strings here,
-// not imported from there, so the root route -- loaded on every page --
-// doesn't pull in Sections.tsx's whole component tree just for four URLs).
+// not imported from there, so the root route (loaded on every page)
+// doesn't pull in Sections.tsx's whole component tree just for four URLs.
 // Keep in sync if those links ever change.
 const SAME_AS = [
   "https://whatsapp.com/channel/0029VbDfaOvF6smtYgb6hn2f",

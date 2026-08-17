@@ -19,7 +19,7 @@ import {
 } from "../../../src/lib/waitlist/security";
 
 /*
- * A plain Nitro/h3 route -- see the note in token.get.ts and vite.config.ts
+ * A plain Nitro/h3 route; see the note in token.get.ts and vite.config.ts
  * for why this isn't a TanStack Start server function. Ported from
  * waitlist-page's server/routes/waitlist.js POST handler; same layering
  * (cheapest check first: origin/honeypot/rate-limit before the token HMAC,
@@ -47,7 +47,7 @@ const ALLOWED_ORIGINS = (process.env["ALLOWED_ORIGINS"] || "")
   .filter(Boolean);
 
 /**
- * Only enforced when the header is actually present -- see the matching
+ * Only enforced when the header is actually present; see the matching
  * comment in the ported source for why a missing Origin header isn't
  * treated as a rejection.
  */
@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
   const ipHash = hashIp(getRequestIP(event, { xForwardedFor: true }));
 
   /*
-   * A tripped honeypot reports success -- see the matching comment in the
+   * A tripped honeypot reports success; see the matching comment in the
    * ported source for why this is a silent no-op rather than a rejection.
    */
   if (honeypotTripped(body.company_website, body.fax)) {

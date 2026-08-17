@@ -1,6 +1,6 @@
 /*
  * Client half of the anti-abuse handshake, ported as-is from waitlist-page's
- * src/lib/pow.ts (pure, presentation-agnostic -- no changes needed).
+ * src/lib/pow.ts (pure, presentation-agnostic; no changes needed).
  *
  * The server hands out a challenge and asks for a nonce whose
  * sha256(`challenge:nonce`) starts with N hex zeros. Solving it costs a visitor

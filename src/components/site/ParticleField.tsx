@@ -40,7 +40,7 @@ interface AntigravityLayerProps {
  * slow orbit around its own scattered home position (so the whole field is
  * always visibly moving, not just the area near the cursor), and particles
  * that come within `magnetRadius` of the cursor (or, after 2s of no mouse
- * movement, of a slow auto-wandering point — the fallback used on touch
+ * movement, of a slow auto-wandering point, the fallback used on touch
  * devices and whenever the mouse is idle) gather into a small rotating ring
  * instead. Adapted from a user-supplied React Three Fiber component: kept
  * the magnet/ring mechanic and per-particle wave/pulse math as given, added
@@ -194,7 +194,7 @@ function AntigravityLayer({
 
 const FALLBACK_COLORS: [string, string] = ["rgb(132, 121, 255)", "rgb(96, 165, 250)"];
 
-// getComputedStyle(...).color isn't reliable here — depending on the browser
+// getComputedStyle(...).color isn't reliable here: depending on the browser
 // build, it can echo an oklch() input back verbatim instead of downgrading
 // it to rgb(), which THREE.Color can't parse. A 1x1 canvas always rasterizes
 // to concrete sRGB bytes regardless of the input color space, so read the
@@ -214,7 +214,7 @@ function toRgbString(cssColor: string): string | null {
 }
 
 /**
- * The intro's ambient particle environment — see AntigravityLayer above for
+ * The intro's ambient particle environment; see AntigravityLayer above for
  * the per-particle motion. Two layers (violet + blue, matching the site's
  * own tokens, so it re-themes for free across default/light) share one
  * scene. Skipped entirely under prefers-reduced-motion, and not mounted

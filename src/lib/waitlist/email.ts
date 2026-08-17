@@ -4,10 +4,10 @@ import type { Resend } from "resend";
 /*
  * Ported from waitlist-page's server/lib/email.js. Same priority order:
  * Gmail/SMTP via nodemailer first, then Resend. Email failure never fails
- * the signup itself -- callers are expected to await this in their own
+ * the signup itself; callers are expected to await this in their own
  * try/catch and just log, matching the source repo's behavior.
  *
- * nodemailer/resend are dynamically imported rather than statically -- see
+ * nodemailer/resend are dynamically imported rather than statically; see
  * the matching comment in db.ts for why (a Nitro chunk-splitting bug that
  * broke every route once these libraries' dependency graphs were bundled
  * statically into the same server entry as start.ts's CSRF middleware).

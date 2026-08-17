@@ -1,4 +1,4 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
+// @lovable.dev/vite-tanstack-config already includes the following; do NOT add them manually
 // or the app will break with duplicate plugins:
 //   - TanStack devtools (dev-only, first), tanstackStart, viteReact, tailwindcss, tsConfigPaths,
 //     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
@@ -14,7 +14,7 @@ export default defineConfig({
   },
   // Opt in to Nitro without hard-pinning a preset, so platform auto-detection
   // (NITRO_PRESET / VERCEL / NETLIFY env vars, via std-env) picks the right
-  // target for whichever platform actually runs the build — Vercel and
+  // target for whichever platform actually runs the build. Vercel and
   // Netlify both deploy from this same config. Lovable's own build pipeline
   // sets LOVABLE_NITRO_PRESET and still wins inside that environment.
   //

@@ -2,7 +2,7 @@ import type { MongoClient, Collection } from "mongodb";
 
 /*
  * Ported from waitlist-page's server/lib/db.js. The connection string is
- * read from the environment and never leaves this process -- nothing under
+ * read from the environment and never leaves this process; nothing under
  * src/ that runs in the browser can see it, this module only ever executes
  * server-side (called from waitlist server functions).
  *
@@ -10,7 +10,7 @@ import type { MongoClient, Collection } from "mongodb";
  * at the top of this file: statically importing it pulled its full (large)
  * dependency graph into the same eagerly-bundled server entry as start.ts's
  * CSRF middleware, and past a certain combined chunk size Nitro's build
- * split that entry into two chunks with a circular import between them --
+ * split that entry into two chunks with a circular import between them:
  * `createCsrfMiddleware` ended up undefined at the point it was called,
  * breaking every route, not just this one. Loading mongodb lazily (it's only
  * ever needed once an actual signup/health-check request comes in) keeps

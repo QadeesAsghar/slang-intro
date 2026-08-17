@@ -90,7 +90,7 @@
  * same dark base. Every token that carries background/foreground/surface
  * meaning is redefined here (background, foreground, card/popover, surfaces,
  * borders, shadow) alongside the accent hues, since every component in the
- * codebase reads color exclusively through these variables — nothing else
+ * codebase reads color exclusively through these variables, nothing else
  * needs to change to re-theme.
  */
 [data-theme="light"] {
@@ -227,7 +227,7 @@
 
 /* InboxMock's animated exchange: a row pops in fast (message-pop) the
    moment it's its turn to type, so the typing indicator itself never sits
-   there mid-fade looking like a loading state -- it's what immediately
+   there mid-fade looking like a loading state; it's what immediately
    replaces the "nothing happening yet" gap. The graceful slower rise
    (message-rise) is reserved for the real text swapping in once typing
    finishes, which is the moment that's supposed to feel like an arrival. */

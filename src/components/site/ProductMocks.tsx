@@ -10,7 +10,7 @@ const messages = [
 
 // Every row enters as a typing indicator first and swaps to its real text
 // once the phase advances further, so there's never a blank/loading-looking
-// gap before a message shows up — the typing indicator itself is what's
+// gap before a message shows up; the typing indicator itself is what's
 // visible while "waiting".
 const TYPING_PHASE = [1, 3, 5];
 const TEXT_PHASE = [2, 4, 6];
@@ -20,11 +20,11 @@ const agentBubbleStyle = { background: "linear-gradient(135deg, var(--violet), v
 
 /**
  * Plays the conversation once, staged, the first time it scrolls into view.
- * Each message enters as a typing indicator, then swaps to its real text —
- * customer, agent, customer — ending with a blinking caret in the reply box.
+ * Each message enters as a typing indicator, then swaps to its real text:
+ * customer, agent, customer, ending with a blinking caret in the reply box.
  * Every row is always mounted (just opacity/transform-hidden pre-reveal) so
  * the container height never shifts as the sequence advances, and nothing
- * ever sits there blank waiting to appear — the typing indicator is what's
+ * ever sits there blank waiting to appear; the typing indicator is what's
  * visible during that gap. Skips straight to the final state under
  * prefers-reduced-motion instead of just letting the CSS transition
  * durations collapse to zero, since the setTimeout chain itself would still

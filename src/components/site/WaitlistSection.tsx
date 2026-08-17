@@ -16,7 +16,7 @@ import { solveChallenge } from "@/lib/waitlist-pow";
  * unchanged from the source.
  *
  * Talks to server/api/waitlist/{token,index,health} via plain fetch(), not
- * TanStack Start server functions -- see the note in vite.config.ts for why.
+ * TanStack Start server functions; see the note in vite.config.ts for why.
  */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -53,7 +53,7 @@ function WaitlistForm() {
 
   // Prefetch a token and start solving its proof-of-work challenge in the
   // background as soon as the form mounts, so submitting never has to wait
-  // on either -- the answer is already sitting there by the time a real
+  // on either; the answer is already sitting there by the time a real
   // visitor finishes typing.
   useEffect(() => {
     let unmounted = false;
@@ -64,7 +64,7 @@ function WaitlistForm() {
         powPromiseRef.current = solveChallenge(result.challenge, result.difficulty);
       })
       .catch(() => {
-        // Offline or the server is still booting -- handleSubmit falls back
+        // Offline or the server is still booting; handleSubmit falls back
         // to fetching a token itself.
       });
     return () => {
@@ -165,7 +165,8 @@ function WaitlistForm() {
           {submissionState === "already_joined" ? (
             <>
               <span className="font-medium break-all text-foreground">{submitted}</span> is already
-              on our waitlist. You're all set — we'll reach out as soon as your workspace is ready.
+              on our waitlist. You're all set, and we'll reach out as soon as your workspace is
+              ready.
             </>
           ) : (
             <>
@@ -187,7 +188,7 @@ function WaitlistForm() {
         off-screen-positioned ones, and real users were getting silently
         caught by their own browser autofilling these on real submissions.
         The field names are likewise generic-but-obscure rather than
-        "company_website"/"fax" -- names common enough to be real business
+        "company_website"/"fax": names common enough to be real business
         form fields are exactly what both autofill heuristics and
         honeypot-aware privacy extensions key off of.
       */}

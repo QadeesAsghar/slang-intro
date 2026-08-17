@@ -4,14 +4,14 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
  * Ported from the standalone waitlist-page repo's server/lib/security.js,
  * adapted to TypeScript and to running as part of slang-intro's own server
  * (TanStack Start server functions) rather than a separate Express app.
- * Behavior is unchanged -- see the original repo for the design rationale
+ * Behavior is unchanged; see the original repo for the design rationale
  * behind each piece; comments here focus on what differs.
  */
 
 const IS_PROD = process.env["NODE_ENV"] === "production";
 
 /**
- * HMAC key for the submit tokens. Required in production -- an ephemeral key
+ * HMAC key for the submit tokens. Required in production; an ephemeral key
  * would invalidate every in-flight token on restart, and across more than one
  * instance no token would ever verify.
  */
@@ -341,12 +341,12 @@ interface MxResult {
 
 /**
  * Every DNS-based deliverability check tried here (MX-only, then MX+A/AAAA)
- * kept trading one failure mode for another -- rejecting real academic
- * domains, or letting parked junk domains through -- and none of it was
+ * kept trading one failure mode for another: rejecting real academic
+ * domains, or letting parked junk domains through, and none of it was
  * verifiable in this environment anyway (outbound DNS is blocked in the
  * sandbox this was built in). Replaced with a plain allowlist: only Gmail
  * and the university domain get through. No DNS lookup, no timeout, no
- * fail-open ambiguity -- just a string comparison that's always correct
+ * fail-open ambiguity, just a string comparison that's always correct
  * for what it claims to do.
  */
 const ALLOWED_DOMAINS = new Set(["gmail.com", "googlemail.com", "student.uet.edu.pk"]);

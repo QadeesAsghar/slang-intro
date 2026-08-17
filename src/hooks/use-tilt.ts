@@ -5,7 +5,7 @@ const MAX_TILT = 5;
 const LIFT_PX = 8;
 
 /**
- * Subtle cursor-based 3D tilt + elevation for an element — the product frame
+ * Subtle cursor-based 3D tilt + elevation for an element: the product frame
  * "reacts slightly when the cursor approaches it" behavior. Element-scoped
  * listeners only (attached directly to the node, not window), so it costs
  * nothing anywhere else on the page. No-ops on touch/coarse pointers and

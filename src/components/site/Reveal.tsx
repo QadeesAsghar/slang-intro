@@ -36,7 +36,7 @@ export function Reveal({
       // The ref is typed against the common HTMLElement base since Tag is
       // polymorphic (div/li/h1/h2/p/span all have distinct, mutually
       // incompatible ref element types, so no single concrete ref type
-      // satisfies all of them at once) — see the PolymorphicTag comment
+      // satisfies all of them at once); see the PolymorphicTag comment
       // above for why this can't just be React.ElementType instead.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ref={ref as any}

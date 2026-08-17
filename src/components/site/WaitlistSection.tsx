@@ -167,14 +167,26 @@ function WaitlistForm() {
           </span>
         ) : (
           <span className="relative mb-2 grid place-items-center" style={{ width: 128, height: 128 }}>
-            <Lottie
-              src={emailSentAnimation}
-              loop={false}
-              autoplay
-              subscriptions={{ complete: () => setPlaneDone(true) }}
-              style={{ width: 128, height: 128 }}
-              aria-hidden="true"
-            />
+            {/*
+              loop={false} holds on its last frame rather than clearing the
+              canvas, and that last frame still has the plane sitting near
+              the edge, peeking out from behind the checkmark. Fading this
+              out as the checkmark fades in (same duration, opposite
+              direction) reads as one continuous handoff instead of a
+              leftover artifact.
+            */}
+            <span
+              className={"absolute transition-opacity duration-300" + (planeDone ? " opacity-0" : " opacity-100")}
+            >
+              <Lottie
+                src={emailSentAnimation}
+                loop={false}
+                autoplay
+                subscriptions={{ complete: () => setPlaneDone(true) }}
+                style={{ width: 128, height: 128 }}
+                aria-hidden="true"
+              />
+            </span>
             {/* Picks up right where the plane's flight ends, via the
                 animation's own completion event rather than a guessed
                 timeout, so this stays in sync even if playback speed or

@@ -95,7 +95,7 @@ export function Hero() {
             transition: "opacity 1.1s ease .7s",
           }}
         >
-          <ProductFrame priority interactive label="app.slang.app" className="mx-auto max-w-6xl">
+          <ProductFrame priority interactive label="slang.app" className="mx-auto max-w-6xl">
             <DashboardMock />
           </ProductFrame>
           <div

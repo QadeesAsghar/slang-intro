@@ -5,7 +5,7 @@ import { useTilt } from "@/hooks/use-tilt";
 export function ProductFrame({
   src,
   alt,
-  label = "app.slang.app",
+  label = "slang.app",
   priority = false,
   className,
   imageClassName,

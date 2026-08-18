@@ -84,7 +84,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 
 export const socialLinks = [
   {
-    label: "WhatsApp only",
+    label: "WhatsApp",
     href: "https://whatsapp.com/channel/0029VbDfaOvF6smtYgb6hn2f",
     icon: WhatsAppIcon,
   },

@@ -1,4 +1,4 @@
-do import { Reveal } from "./Reveal";
+import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 import { ProductFrame } from "./ProductFrame";
 import {
@@ -9,7 +9,16 @@ import {
   WidgetSettingsMock,
   SecurityMock,
 } from "./ProductMocks";
-import { Github, Linkedin, Instagram, Mail, MessageSquare, Users, Workflow } from "lucide-react";
+import {
+  Github,
+  Linkedin,
+  Instagram,
+  Facebook,
+  Mail,
+  MessageSquare,
+  Users,
+  Workflow,
+} from "lucide-react";
 
 const tourStops = [
   {
@@ -100,8 +109,13 @@ export const socialLinks = [
   },
   {
     label: "Instagram",
-    href: "https://www.instagram.com/slang_chat?igsh=aG10Znpjc250M3c1",
+    href: "https://www.instagram.com/slang_org",
     icon: Instagram,
+  },
+  {
+    label: "Facebook",
+    href: "https://www.facebook.com/people/Slang-Org/61593300877307/",
+    icon: Facebook,
   },
 ];
 
@@ -174,7 +188,7 @@ export function ConnectSection() {
           Slang is being built in the open. Join the channel, follow the org, or say hello directly.
         </SectionHeading>
 
-        <ul className="mt-14 grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-14 grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-5">
           {socialLinks.map(({ label, href, icon: Icon }, i) => (
             <Reveal as="li" key={label} delay={i * 80}>
               <a

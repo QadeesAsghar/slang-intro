@@ -1,4 +1,4 @@
-import { Reveal } from "./Reveal";
+do import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 import { ProductFrame } from "./ProductFrame";
 import {
@@ -84,7 +84,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 
 export const socialLinks = [
   {
-    label: "WhatsApp channel",
+    label: "WhatsApp",
     href: "https://whatsapp.com/channel/0029VbDfaOvF6smtYgb6hn2f",
     icon: WhatsAppIcon,
   },

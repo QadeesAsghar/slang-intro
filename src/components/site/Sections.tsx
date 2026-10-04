@@ -136,10 +136,10 @@ export function WhatIsSlang() {
           all live in the same workspace.
         </SectionHeading>
 
-        <ul className="mt-14 grid gap-10 border-t border-hairline pt-10 sm:grid-cols-3 lg:gap-16">
+        <ul className="mt-14 grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-3">
           {capabilities.map(({ title, body, icon: Icon }, i) => (
-            <Reveal as="li" key={title} delay={i * 80}>
-              <span className="flex size-10 items-center justify-center text-violet">
+            <Reveal as="li" key={title} delay={i * 80} className="bg-surface p-8 text-center">
+              <span className="mx-auto flex size-10 items-center justify-center rounded-full border border-hairline bg-surface-2 text-violet">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
               <h3 className="mt-4 text-[15px] font-semibold">{title}</h3>
@@ -154,7 +154,7 @@ export function WhatIsSlang() {
 
 export function ProductTour() {
   return (
-    <section id="product-tour" className="border-t border-hairline py-24 lg:py-32">
+    <section className="border-t border-hairline py-24 lg:py-32">
       <div className="mx-auto flex max-w-7xl flex-col gap-24 px-5 lg:gap-32 lg:px-8">
         {tourStops.map(({ eyebrow, title, body, label, Mock }, i) => {
           const imageFirst = i % 2 === 1;

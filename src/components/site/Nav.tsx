@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Github } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -46,18 +45,6 @@ export function Nav() {
         </a>
 
         <div className="flex items-center gap-3">
-          <a
-            href="#product"
-            className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
-          >
-            Platform
-          </a>
-          <a
-            href="#product-tour"
-            className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
-          >
-            Product tour
-          </a>
           <Button
             variant="ghost"
             size="sm"
@@ -66,12 +53,7 @@ export function Nav() {
           >
             <a href="#connect">Connect</a>
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
-            asChild
-          >
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" asChild>
             <a
               href="https://github.com/QadeesAsghar"
               target="_blank"
@@ -80,9 +62,6 @@ export function Nav() {
             >
               <Github />
             </a>
-          </Button>
-          <Button size="sm" asChild>
-            <Link to="/waitlist">Join waitlist</Link>
           </Button>
         </div>
       </nav>
